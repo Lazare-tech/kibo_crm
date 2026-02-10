@@ -1,0 +1,40 @@
+  .carousel-container {
+    display: flex;
+    overflow-x: scroll;
+    scroll-behavior: smooth;
+    padding: 1rem 0;
+  }
+
+  .carousel-item {
+    min-width: 200px; /* Ajustez cette valeur pour la taille des cartes */
+    margin-right: 1rem; /* Espace entre les cartes */
+  }
+
+  .carousel-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 100;
+  }
+
+  .prev {
+    left: 10px;
+  }
+
+  .next {
+    right: 10px;
+  }
+
+  .position-relative {
+    position: relative;
+  }
+
+  .carousel-container::-webkit-scrollbar {
+    display: none; /* Cache la scrollbar */
+  }

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="card p-4 shadow-sm">
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="col-md-6">
+                {{ form.first_name|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ form.last_name|as_crispy_field }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                {{ form.email|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ form.phone_number|as_crispy_field }}
+            </div>
+        </div>
+
+        {{ form.status|as_crispy_field }}
+        {{ form.source|as_crispy_field }}
+        {{ form.agent|as_crispy_field }}
+        {{ form.description|as_crispy_field }}
+
+        <button type="submit" class="btn btn-primary mt-3">Enregistrer</button>
+    </form>
+</div>
+{% endblock content %}

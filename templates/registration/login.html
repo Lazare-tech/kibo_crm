@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-lg p-4">
+            <div class="text-center mb-4">
+                <h3 class="fw-bold text-primary">Connexion</h3>
+                <p class="text-muted small">Accédez à votre espace Kibo CRM</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary w-100 rounded-pill py-2 mt-3">
+                    Se connecter
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}

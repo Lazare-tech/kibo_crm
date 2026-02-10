@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0">Pipeline des Ventes</h4>
+    <div class="text-muted small">Valeur totale : <strong>{{ total_pipeline }} FCFA</strong></div>
+</div>
+
+<div class="row g-3 overflow-auto flex-nowrap pb-4" style="min-height: 80vh;">
+    {% for stage in pipeline %}
+    <div class="col-md-3" style="min-width: 300px;">
+        <div class="bg-light rounded-3 p-3 h-100 shadow-sm border-top border-4 
+            {% if stage.code == 'gagne' %}border-success{% elif stage.code == 'perdu' %}border-danger{% else %}border-primary{% endif %}">
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0 text-uppercase small">{{ stage.name }}</h6>
+                <span class="badge bg-white text-dark border">{{ stage.deals.count }}</span>
+            </div>
+            
+            <div class="mb-3 small text-muted fw-bold">{{ stage.total }} FCFA</div>
+
+            <div class="deal-list">
+                {% for deal in stage.deals %}
+                <div class="card border-0 shadow-sm mb-2 p-3">
+                    <div class="small fw-bold text-primary mb-1">{{ deal.lead.first_name }} {{ deal.lead.last_name }}</div>
+                    <div class="fw-bold mb-2">{{ deal.name }}</div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small text-muted"><i class="far fa-calendar-alt me-1"></i> {{ deal.expected_close_date|date:"d/m" }}</span>
+                        <span class="fw-bold small text-dark">{{ deal.amount }} FCFA</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock content %}

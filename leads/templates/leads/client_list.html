@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Portefeuille Clients</h4>
+        <p class="text-muted small">Consultez vos clients acquis et gérez leur facturation.</p>
+    </div>
+    <div class="badge bg-success-subtle text-success p-2 px-3 rounded-pill border border-success-subtle">
+        <i class="fas fa-certificate me-2"></i>{{ clients.count }} Clients actifs
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for client in clients %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card border-0 shadow-sm h-100 hover-shadow transition">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="text-center mb-3">
+                    <div class="avatar-lg bg-success-subtle text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: 600;">
+                        {{ client.first_name|first|upper }}{{ client.last_name|first|upper }}
+                    </div>
+                    <h6 class="fw-bold mb-0 text-dark">{{ client.first_name }} {{ client.last_name }}</h6>
+                    <p class="text-muted small mb-0">{{ client.email }}</p>
+                </div>
+
+                <hr class="opacity-25">
+
+                <div class="flex-grow-1 overflow-auto mb-3" style="max-height: 120px;">
+                    <p class="text-uppercase small fw-bold text-muted" style="font-size: 0.65rem;">Dernières Factures</p>
+                    {% for invoice in client.invoices.all %}
+                        <div class="d-flex justify-content-between align-items-center mb-1 bg-light p-2 rounded">
+                            <a href="{% url 'leads:invoice-pdf' invoice.pk %}" class="text-decoration-none small text-primary fw-semibold">
+                                <i class="fas fa-file-pdf me-1"></i> {{ invoice.invoice_number|truncatechars:10 }}
+                            </a>
+                            <span class="small fw-bold text-dark" style="font-size: 0.7rem;">{{ invoice.amount }} F</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small italic opacity-75">Aucune facture émise.</p>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'leads:create-invoice' client.pk %}" class="btn btn-sm btn-primary rounded-pill">
+                        <i class="fas fa-file-invoice me-1"></i> Facturer
+                    </a>
+                    <a href="mailto:{{ client.email }}" class="btn btn-sm btn-light border rounded-pill">
+                        <i class="fas fa-envelope me-1"></i> Contacter
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 text-center pb-3">
+                <small class="text-muted" style="font-size: 0.65rem;">Client depuis le {{ client.date_converted|date:"d/m/Y" }}</small>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="card border-0 shadow-sm p-5 bg-white">
+            <i class="fas fa-user-check fs-1 text-light mb-3"></i>
+            <h5 class="fw-bold">Prêt pour votre premier client ?</h5>
+            <p class="text-muted">Dès qu'un prospect sera converti, ses informations et ses factures apparaîtront ici.</p>
+            <a href="{% url 'leads:home' %}" class="btn btn-primary btn-sm rounded-pill px-4">Aller au Dashboard</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .hover-shadow:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important; }
+    .transition { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+    /* Personnalisation de la scrollbar pour les factures */
+    .overflow-auto::-webkit-scrollbar { width: 4px; }
+    .overflow-auto::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+</style>
+{% endblock content %}

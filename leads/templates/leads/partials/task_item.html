@@ -1,0 +1,19 @@
+<div class="d-flex align-items-center p-2 border-bottom" id="task-{{ task.pk }}">
+    <input type="checkbox" class="form-check-input me-3" 
+           hx-post="{% url 'leads:toggle-task' task.pk %}" 
+           hx-target="#task-{{ task.pk }}"
+           hx-swap="outerHTML"
+           {% if task.is_completed %}checked{% endif %}>
+    
+    <div class="flex-grow-1">
+        <span class="{% if task.is_completed %}text-decoration-line-through text-muted{% endif %}">
+            {{ task.title }}
+        </span>
+        <br>
+        <small class="text-muted small">Échéance : {{ task.due_date|date:"d/m" }}</small>
+    </div>
+    
+    <span class="badge {% if task.priority == 'haute' %}bg-danger{% else %}bg-secondary{% endif %} ms-2">
+        {{ task.priority }}
+    </span>
+</div>
