@@ -15,6 +15,9 @@ urlpatterns = [
     path('prospect/<int:pk>/', leads.views.lead_detail, name='lead-detail'),
     path('pipeline/', leads.views.pipeline_view, name='pipeline'),
     path('task/<int:pk>/toggle/', leads.views.toggle_task, name='toggle-task'),
+    ####
+    path('create/<int:lead_pk>/deal/', leads.views.deal_create, name='deal-create'),
+    path('deal/<int:pk>/update-stage/', leads.views.update_deal_stage, name='update-deal-stage'),
     # Conversion d'un lead en client
     path('clients/', leads.views.client_list, name='client-list'),
 path('convert/<int:pk>/', leads.views.convert_lead_to_client, name='convert-to-client'),

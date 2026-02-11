@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Journal des Mouvements</h4>
+        <p class="text-muted small">Produit : <span class="text-primary fw-bold">{{ product.name }}</span> ({{ product.sku }})</p>
+    </div>
+    <a href="{% url 'inventory:export-stock-pdf' product.pk %}" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm">
+    <i class="fas fa-file-pdf me-2"></i>Télécharger le Rapport PDF
+</a>
+    <a href="{% url 'inventory:product-list' %}" class="btn btn-light btn-sm rounded-pill border shadow-sm">
+        <i class="fas fa-arrow-left me-2"></i>Retour au catalogue
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4 border-0">Date & Heure</th>
+                    <th class="border-0">Type</th>
+                    <th class="border-0">Quantité</th>
+                    <th class="border-0">Raison / Commentaire</th>
+                    <th class="text-end pe-4 border-0">Utilisateur</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for movement in movements %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="small fw-bold">{{ movement.date|date:"d M Y" }}</div>
+                        <div class="text-muted" style="font-size: 0.7rem;">{{ movement.date|date:"H:i" }}</div>
+                    </td>
+                    <td>
+                        {% if movement.movement_type == 'entree' %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                <i class="fas fa-arrow-trend-up me-1"></i> Entrée
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
+                                <i class="fas fa-arrow-trend-down me-1"></i> Sortie
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold {% if movement.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
+                        {% if movement.movement_type == 'entree' %}+{% else %}-{% endif %} {{ movement.quantity }}
+                    </td>
+                    <td class="small text-secondary">{{ movement.reason }}</td>
+                    <td class="text-end pe-4">
+                        <span class="badge bg-light text-dark fw-normal border">{{ user.username }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-5">
+                        <i class="fas fa-history fa-3x text-light mb-3"></i>
+                        <p class="text-muted">Aucun mouvement enregistré pour cet article.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

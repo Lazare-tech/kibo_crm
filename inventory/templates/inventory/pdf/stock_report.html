@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; font-size: 10pt; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #4361ee; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background-color: #f8f9fa; border: 1px solid #ddd; padding: 8px; text-align: left; }
+        td { border: 1px solid #ddd; padding: 8px; }
+        .text-success { color: green; }
+        .text-danger { color: red; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Rapport de Mouvements de Stock</h1>
+        <p>Produit : <strong>{{ product.name }}</strong> | SKU : {{ product.sku }}</p>
+        <p>Généré le : {{ now|date:"d/m/Y H:i" }} par {{ user.username }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Quantité</th>
+                <th>Raison</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in movements %}
+            <tr>
+                <td>{{ m.date|date:"d/m/Y H:i" }}</td>
+                <td>{{ m.get_movement_type_display }}</td>
+                <td class="{% if m.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
+                    {% if m.movement_type == 'entree' %}+{% else %}-{% endif %} {{ m.quantity }}
+                </td>
+                <td>{{ m.reason }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

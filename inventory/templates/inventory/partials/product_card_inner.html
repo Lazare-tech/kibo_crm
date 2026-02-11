@@ -1,0 +1,40 @@
+{% load humanize %}
+<div class="card border-0 shadow-sm h-100 transition">
+    <div class="card-body d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <span class="badge bg-light text-muted fw-normal" style="font-size: 0.65rem;">{{ product.sku }}</span>
+            {% if product.is_low_stock %}
+                <span class="badge bg-danger rounded-pill shadow-sm animate-pulse">Alerte Seuil</span>
+            {% else %}
+                <span class="badge bg-success-subtle text-success rounded-pill fw-normal">Correct</span>
+            {% endif %}
+        </div>
+        
+        <h6 class="fw-bold text-dark mb-1">{{ product.name }}</h6>
+        <p class="text-muted small mb-3 flex-grow-1"><i class="fas fa-tag me-1"></i>{{ product.category.name }}</p>
+        
+        <div class="{% if product.is_low_stock %}bg-danger-subtle{% else %}bg-light{% endif %} p-3 rounded-3 text-center mb-3">
+            <span class="h2 fw-bold {% if product.is_low_stock %}text-danger{% else %}text-primary{% endif %} mb-0">{{ product.quantity }}</span>
+            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.6rem;">{{ product.get_unit_display }}s disponibles</div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
+            <div>
+                <span class="fw-bold text-dark small d-block">{{ product.selling_price|intcomma }} F</span>
+                <small class="text-muted" style="font-size: 0.65rem;">Prix Unitaire</small>
+            </div>
+            <div class="btn-group">
+                <a href="{% url 'inventory:stock-history' product.pk %}" class="btn btn-sm btn-outline-secondary rounded-circle me-1" title="Historique">
+                    <i class="fas fa-history"></i>
+                </a>
+                <button class="btn btn-sm btn-primary rounded-circle shadow-sm" 
+                        hx-get="{% url 'inventory:get-stock-form' product.pk %}" 
+                        hx-target="closest .col-md-4"
+                        hx-swap="innerHTML"
+                        title="Ajuster le stock">
+                    <i class="fas fa-plus-minus"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

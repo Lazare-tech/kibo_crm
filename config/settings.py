@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_htmx',
     'leads',
+    'inventory',
+    'sales',
+    'django.contrib.humanize',
 ]
 
 MIDDLEWARE = [
@@ -136,7 +139,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "/")
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-
+####
+USE_L10N = True
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = ' '  
+NUMBER_GROUPING = 3
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 # --- AUTHENTIFICATION ---

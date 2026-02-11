@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="POST" action="{% url 'sales:validate-sale' %}">
+    {% csrf_token %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm p-3 mb-4">
+            <div class="input-group rounded-pill bg-light overflow-hidden border-0">
+                <span class="input-group-text border-0 bg-light"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" class="form-control border-0 bg-light" placeholder="Scanner ou rechercher un produit...">
+            </div>
+        </div>
+
+        <div class="row g-3" id="pos-product-grid">
+            {% for product in products %}
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm hover-primary transition text-center p-3" 
+                     hx-get="{% url 'sales:add-to-cart' product.id %}" 
+                     hx-target="#cart-items" 
+                     hx-swap="beforeend"
+                     style="cursor: pointer;">
+                    <div class="fw-bold text-dark small">{{ product.name }}</div>
+                    <div class="text-primary fw-bold mt-2">{{ product.selling_price }} F</div>
+                    <div class="text-muted" style="font-size: 0.6rem;">Dispo: {{ product.quantity }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100 d-flex flex-column">
+            <div class="card-header bg-dark text-white p-3">
+                <h6 class="mb-0 fw-bold"><i class="fas fa-shopping-cart me-2"></i> Panier de vente</h6>
+            </div>
+            <div class="card-body flex-grow-1 overflow-auto" style="max-height: 400px;">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr class="text-muted small">
+                            <th>Article</th>
+                            <th>Qté</th>
+                            <th class="text-end">Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items">
+                        </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-4">
+    <div class="mb-3">
+        <label class="small fw-bold text-muted text-uppercase">Client</label>
+        <select name="client_id" class="form-select form-select-sm border-0 shadow-sm" required>
+            <option value="">-- Choisir un client --</option>
+            {% for client in clients %}
+                <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <hr class="my-3 opacity-10">
+
+    <div class="d-flex justify-content-between mb-2">
+        <span class="text-muted">Sous-total</span>
+        <span class="fw-bold" id="cart-subtotal">0 F</span>
+    </div>
+    <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
+        <h4 class="fw-bold text-dark">Total à payer</h4>
+        <h4 class="fw-bold text-primary" id="cart-total-val">0 F</h4>
+        <input type="hidden" id="final-total-hidden" name="total_amount" value="0">
+    </div>
+
+    <div class="row g-2 mb-3">
+        <div class="col-6">
+            <label class="small fw-bold text-success text-uppercase">Montant Reçu</label>
+            <input type="number" name="amount_paid" id="amount-received" 
+                   class="form-control form-control-lg fw-bold text-success border-success-subtle" 
+                   placeholder="0" oninput="calculateBalance()">
+        </div>
+        <div class="col-6 text-end">
+            <label class="small fw-bold text-muted text-uppercase" id="balance-label">Reste à payer (Créance)</label>
+            <h3 class="fw-bold text-danger" id="balance-amount">0 F</h3>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm mt-2">
+        <i class="fas fa-check-circle me-2"></i> VALIDER & GÉNÉRER LA FACTURE
+    </button>
+</div>
+        </div>
+    </div>
+</div>
+</form>
+<style>
+    .hover-primary:hover { border: 1px solid var(--primary-color) !important; background: #f0f3ff; }
+</style>
+<script>
+// 1. Quand on change la quantité d'une ligne
+function updateRow(input) {
+    const qty = parseInt(input.value) || 0;
+    const price = parseFloat(input.getAttribute('data-price')) || 0;
+    const row = input.closest('tr');
+    
+    const total = qty * price;
+    
+    // Mise à jour de l'affichage (avec espaces pour les milliers)
+    row.querySelector('.line-total-display').innerText = total.toLocaleString('fr-FR');
+    
+    // Mise à jour de la valeur cachée (nombre pur pour le calcul final)
+    row.querySelector('.line-total-hidden').value = total;
+    
+    calculateGrandTotal();
+}
+
+// 2. Calcule le total de toute la facture
+function calculateGrandTotal() {
+    let grandTotal = 0;
+    
+    // On additionne les INPUTS CACHÉS (plus d'erreur d'espaces !)
+    document.querySelectorAll('.line-total-hidden').forEach(input => {
+        grandTotal += parseFloat(input.value) || 0;
+    });
+    
+    // Mise à jour des labels du bas
+    const formatted = grandTotal.toLocaleString('fr-FR') + " F";
+    document.getElementById('cart-subtotal').innerText = formatted;
+    document.getElementById('cart-total-val').innerText = formatted;
+    
+    // Mise à jour du champ envoyé à Django
+    document.getElementById('final-total-hidden').value = grandTotal;
+    
+    calculateBalance();
+}
+
+// 3. Gère la monnaie et le reste à payer
+function calculateBalance() {
+    const total = parseFloat(document.getElementById('final-total-hidden').value) || 0;
+    const received = parseFloat(document.getElementById('amount-received').value) || 0;
+    const diff = received - total;
+
+    const balanceAmount = document.getElementById('balance-amount');
+    const balanceLabel = document.getElementById('balance-label');
+
+    if (diff >= 0) {
+        balanceLabel.innerText = "Monnaie à rendre";
+        balanceLabel.className = "small fw-bold text-primary text-uppercase";
+        balanceAmount.innerText = diff.toLocaleString('fr-FR') + " F";
+        balanceAmount.className = "fw-bold text-primary";
+    } else {
+        balanceLabel.innerText = "Reste à payer (Créance)";
+        balanceLabel.className = "small fw-bold text-danger text-uppercase";
+        balanceAmount.innerText = Math.abs(diff).toLocaleString('fr-FR') + " F";
+        balanceAmount.className = "fw-bold text-danger";
+    }
+}
+</script>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Lead,Deal,Task,Client
+from inventory.models import Product
 from .forms import LeadModelForm,NoteModelForm,DealModelForm,TaskModelForm,InvoiceModelForm
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
@@ -40,6 +41,14 @@ def dashboard(request):
         due_date__lte=date.today(),
         is_completed=False
     ).order_by('due_date')[:5] # On en prend 5 maximum pour le dashboard
+    
+    
+    # --- DONNÉES INVENTAIRE ---
+    total_products = Product.objects.count()
+    # On récupère spécifiquement les produits en alerte
+    low_stock_products = [p for p in Product.objects.all() if p.is_low_stock]
+    low_stock_count = len(low_stock_products)
+    
     context = {
         'leads': leads,
         'total_leads':Lead.objects.count(),
@@ -154,7 +163,7 @@ def deal_create(request, lead_pk):
             deal = form.save(commit=False)
             deal.lead = lead
             deal.save()
-            return redirect('leads:lead-detail', pk=lead.pk)
+            return redirect('leads:pipeline')
     else:
         form = DealModelForm()
     
@@ -174,7 +183,8 @@ def pipeline_view(request):
         ('negociation', 'Négociation'),
         ('gagne', 'Gagné'),
     ]
-    
+    # On filtre pour ne prendre que les affaires non perdues (optionnel)
+    total_pipeline_value = deals.exclude(stage='perdu').aggregate(Sum('amount'))['amount__sum'] or 0
     pipeline_data = []
     for stage_code, stage_name in stages:
         stage_deals = deals.filter(stage=stage_code)
@@ -186,7 +196,8 @@ def pipeline_view(request):
             'total': stage_total
         })
     context={
-        "pipeline": pipeline_data
+        "pipeline": pipeline_data,
+        "total_pipeline_value": total_pipeline_value
     }
 
     return render(request, "leads/pipeline.html", context)
@@ -222,6 +233,18 @@ def convert_lead_to_client(request, pk):
     lead.save()
     
     return redirect('leads:client-list') # On va créer cette liste
+####
+@login_required
+def update_deal_stage(request, pk):
+    deal = get_object_or_404(Deal, pk=pk)
+    new_stage = request.POST.get('stage')
+    
+    if new_stage in dict(Deal.STAGES):
+        deal.stage = new_stage
+        deal.save()
+        
+    # On redirige vers la vue pipeline pour que HTMX rafraîchisse tout le tableau
+    return pipeline_view(request)
 ###
 @login_required
 def client_list(request):

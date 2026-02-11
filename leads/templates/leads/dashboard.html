@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load humanize %}
 
 {% block content %}
 <div class="row g-4 mb-4">
@@ -10,7 +11,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted mb-0 small text-uppercase fw-bold">CA Encaissé</h6>
-                    <span class="h4 fw-bold mb-0 text-success">{{ total_encaisse }} FCFA</span>
+                    <span class="h4 fw-bold mb-0 text-success">{{ total_encaisse|intcomma }} FCFA</span>
                 </div>
             </div>
         </div>
@@ -24,7 +25,7 @@
                 </div>
                 <div>
                     <h6 class="text-muted mb-0 small text-uppercase fw-bold">Factures en attente</h6>
-                    <span class="h4 fw-bold mb-0 text-warning">{{ total_en_attente }} FCFA</span>
+                    <span class="h4 fw-bold mb-0 text-warning">{{ total_en_attente|intcomma }} FCFA</span>
                 </div>
             </div>
         </div>
@@ -38,7 +39,52 @@
                 </div>
                 <div>
                     <h6 class="text-muted mb-0 small text-uppercase fw-bold">Pipeline (Deals)</h6>
-                    <span class="h4 fw-bold mb-0 text-primary">{{ total_pipeline }} FCFA</span>
+                    <span class="h4 fw-bold mb-0 text-primary">{{ total_pipeline|intcomma }} FCFA</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100 border-start border-info border-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-uppercase small text-muted m-0"><i class="fas fa-boxes me-2"></i>Inventaire Rapide</h6>
+                    <a href="{% url 'inventory:product-list' %}" class="btn btn-sm btn-light rounded-pill border px-3">Gérer le stock</a>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6 border-end">
+                        <span class="h3 fw-bold d-block text-dark">{{ total_products }}</span>
+                        <small class="text-muted small text-uppercase">Articles</small>
+                    </div>
+                    <div class="col-6">
+                        <span class="h3 fw-bold d-block {% if low_stock_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                            {{ low_stock_count }}
+                        </span>
+                        <small class="text-muted small text-uppercase">Alertes Stock</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-uppercase small text-danger mb-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Alertes critiques
+                </h6>
+                <div class="list-group list-group-flush">
+                    {% for product in low_stock_products|slice:":3" %}
+                        <div class="list-group-item px-0 border-0 d-flex justify-content-between align-items-center py-1">
+                            <span class="small fw-bold text-dark">{{ product.name }}</span>
+                            <span class="badge bg-danger-subtle text-danger rounded-pill">{{ product.quantity }} {{ product.unit }} restants</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted small py-2"><i class="fas fa-check-circle text-success me-2"></i>Tous les stocks sont suffisants.</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>

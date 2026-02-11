@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-
+{% load humanize %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold m-0">Pipeline des Ventes</h4>
-    <div class="text-muted small">Valeur totale : <strong>{{ total_pipeline }} FCFA</strong></div>
+    <div class="text-muted small">Valeur totale : <strong>{{ total_pipeline_value|intcomma }} FCFA</strong></div>
 </div>
 
 <div class="row g-3 overflow-auto flex-nowrap pb-4" style="min-height: 80vh;">
@@ -17,18 +17,41 @@
                 <span class="badge bg-white text-dark border">{{ stage.deals.count }}</span>
             </div>
             
-            <div class="mb-3 small text-muted fw-bold">{{ stage.total }} FCFA</div>
+            <div class="mb-3 small text-muted fw-bold">{{ stage.total|intcomma }} FCFA</div>
 
             <div class="deal-list">
                 {% for deal in stage.deals %}
-                <div class="card border-0 shadow-sm mb-2 p-3">
-                    <div class="small fw-bold text-primary mb-1">{{ deal.lead.first_name }} {{ deal.lead.last_name }}</div>
-                    <div class="fw-bold mb-2">{{ deal.name }}</div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="small text-muted"><i class="far fa-calendar-alt me-1"></i> {{ deal.expected_close_date|date:"d/m" }}</span>
-                        <span class="fw-bold small text-dark">{{ deal.amount }} FCFA</span>
-                    </div>
-                </div>
+               <div class="card border-0 shadow-sm mb-3 p-3" id="deal-{{ deal.pk }}">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="small fw-bold text-primary">{{ deal.lead.first_name }} {{ deal.lead.last_name }}</div>
+        
+        <div class="dropdown">
+            <select class="form-select form-select-sm border-0 bg-light" 
+                    style="font-size: 0.65rem; width: auto;"
+                    name="stage"
+                    hx-post="{% url 'leads:update-deal-stage' deal.pk %}"
+                    hx-target="body" 
+                    hx-push-url="false">
+                {% for stage_code, stage_name in deal.STAGES %}
+                    <option value="{{ stage_code }}" {% if deal.stage == stage_code %}selected{% endif %}>
+                        {{ stage_name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="fw-bold mb-2" style="font-size: 0.9rem;">{{ deal.name }}</div>
+    
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <span class="badge bg-light text-dark border-0" style="font-size: 0.75rem;">
+            {{ deal.amount|intcomma }} FCFA
+        </span>
+        <a href="{% url 'leads:lead-detail' deal.lead.pk %}" class="text-muted">
+            <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i>
+        </a>
+    </div>
+</div>
                 {% endfor %}
             </div>
         </div>

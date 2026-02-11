@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'inventory:product-list' %}" class="text-decoration-none">Stock</a></li>
+                    <li class="breadcrumb-item active">Ajustement</li>
+                </ol>
+            </nav>
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-dark py-3">
+                    <h5 class="card-title text-white mb-0 fw-bold">
+                        <i class="fas fa-sync-alt me-2 text-primary"></i>
+                        Ajuster le stock : {{ product.name }}
+                    </h5>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded-3">
+                        <div>
+                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Stock Actuel</small>
+                            <span class="h4 fw-bold text-dark mb-0" id="current-qty">{{ product.quantity }}</span>
+                            <small class="text-muted">{{ product.get_unit_display }}s</small>
+                        </div>
+                        <div class="text-center">
+                            <i class="fas fa-long-arrow-alt-right fs-4 text-muted"></i>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Nouveau Stock</small>
+                            <span class="h4 fw-bold text-primary mb-0" id="preview-qty">{{ product.quantity }}</span>
+                            <small class="text-muted">{{ product.get_unit_display }}s</small>
+                        </div>
+                    </div>
+
+                    <form method="post" id="adjustment-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.movement_type|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.quantity|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.reason|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div id="stock-error" class="alert alert-danger d-none mt-3 small py-2">
+                            <i class="fas fa-exclamation-circle me-2"></i> 
+                            Attention : Le stock ne peut pas être négatif.
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary rounded-pill fw-bold" id="submit-btn">
+                                Enregistrer le mouvement
+                            </button>
+                            <a href="{% url 'inventory:product-list' %}" class="btn btn-link text-muted btn-sm text-decoration-none">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const currentQty = parseInt("{{ product.quantity }}");
+    const qtyInput = document.querySelector('input[name="quantity"]');
+    const typeInput = document.querySelector('select[name="movement_type"]');
+    const previewQty = document.getElementById('preview-qty');
+    const errorMsg = document.getElementById('stock-error');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function updatePreview() {
+        const val = parseInt(qtyInput.value) || 0;
+        const type = typeInput.value;
+        let result = currentQty;
+
+        if (type === 'entree') {
+            result = currentQty + val;
+        } else {
+            result = currentQty - val;
+        }
+
+        previewQty.innerText = result;
+
+        // Sécurité : bloquer si stock négatif
+        if (result < 0) {
+            errorMsg.classList.remove('d-none');
+            submitBtn.disabled = true;
+            previewQty.classList.add('text-danger');
+        } else {
+            errorMsg.classList.add('d-none');
+            submitBtn.disabled = false;
+            previewQty.classList.remove('text-danger');
+        }
+    }
+
+    qtyInput.addEventListener('input', updatePreview);
+    typeInput.addEventListener('change', updatePreview);
+</script>
+{% endblock %}

@@ -1,0 +1,15 @@
+<form hx-post="{% url 'inventory:adjust-stock-htmx' product.pk %}" hx-target="#product-card-{{ product.pk }}" class="p-2 bg-light rounded shadow-sm mt-2">
+    {% csrf_token %}
+    <div class="input-group input-group-sm mb-2">
+        <select name="movement_type" class="form-select form-select-sm">
+            <option value="entree">+</option>
+            <option value="sortie">-</option>
+        </select>
+        <input type="number" name="quantity" class="form-control" placeholder="Qté" required min="1">
+    </div>
+    <input type="text" name="reason" class="form-control form-control-sm mb-2" placeholder="Raison (ex: vente, retour)">
+    <div class="d-flex gap-1">
+        <button type="submit" class="btn btn-primary btn-sm w-100">OK</button>
+        <button type="button" class="btn btn-light btn-sm border" hx-get="{% url 'inventory:get-product-card' product.pk %}" hx-target="#product-card-{{ product.pk }}">Annuler</button>
+    </div>
+</form>

@@ -47,6 +47,29 @@
                     <p class="mb-0 small"><i class="fas fa-bullhorn me-2 text-muted"></i>Source : {{ lead.get_source_display }}</p>
                 </div>
             </div>
+
+            <div class="card border-0 shadow-sm p-4 mb-4 border-start border-primary border-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold text-uppercase small m-0">Ventes en cours</h6>
+                    <a href="{% url 'leads:deal-create' lead.pk %}" class="btn btn-sm btn-primary rounded-circle">
+                        <i class="fas fa-plus"></i>
+                    </a>
+                </div>
+                
+                {% for deal in lead.deals.all %}
+                    <div class="bg-light p-2 rounded mb-2 border">
+                        <div class="d-flex justify-content-between">
+                            <span class="small fw-bold text-dark">{{ deal.name }}</span>
+                            <span class="small text-success fw-bold">{{ deal.amount }} F</span>
+                        </div>
+                        <div class="text-muted" style="font-size: 0.7rem;">
+                            <i class="fas fa-stream me-1"></i> {{ deal.get_stage_display }}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted small italic mb-0">Aucune affaire liée. Cliquez sur + pour créer un montant dans le pipeline.</p>
+                {% endfor %}
+            </div>
             
             <div class="card border-0 shadow-sm p-4 mb-4">
                 <h6 class="fw-bold mb-3 text-uppercase small text-muted">Description / Besoins</h6>
@@ -57,10 +80,8 @@
         </div>
 
         <div class="col-md-8">
-            
             <div class="card border-0 shadow-sm p-4 mb-4">
                 <h5 class="fw-bold mb-3"><i class="fas fa-tasks me-2 text-success"></i>Tâches à faire</h5>
-                
                 <form method="post" class="row g-2 mb-3">
                     {% csrf_token %}
                     <div class="col-md-6">{{ task_form.title }}</div>
@@ -72,7 +93,6 @@
                         </button>
                     </div>
                 </form>
-
                 <div id="task-list" class="mt-2">
                     {% for task in tasks %}
                         {% include 'leads/partials/task_item.html' %}
@@ -84,15 +104,12 @@
 
             <div class="card border-0 shadow-sm p-4">
                 <h5 class="fw-bold mb-4"><i class="fas fa-comment-dots me-2 text-warning"></i>Notes de suivi</h5>
-                
                 <form method="post" class="mb-4">
                     {% csrf_token %}
                     {{ note_form|crispy }}
                     <button type="submit" name="note_submit" class="btn btn-sm btn-primary rounded-pill mt-2 px-3">Ajouter la note</button>
                 </form>
-
                 <hr>
-
                 <div class="timeline mt-4">
                     {% for note in notes %}
                         <div class="d-flex mb-4">
