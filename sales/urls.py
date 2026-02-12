@@ -10,4 +10,5 @@ urlpatterns = [
     path('validate/', sales.views.validate_sale, name='validate-sale'), # Ajoute cette ligne
     path('update-line/', sales.views.update_line_htmx, name='update-line'),
     path('history/', sales.views.sale_list, name='sale-list'),
+    path('generate/<int:sale_id>/', sales.views.generate_invoice_pdf, name='generate-invoice')
 ]

@@ -61,7 +61,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end pe-4">
-                            <a href="#" target="_blank" class="btn btn-sm btn-light border text-danger">
+                            <a href="{% url 'sales:generate-invoice' sale.id %}" target="_blank" class="btn btn-sm btn-light border text-danger">
                                 <i class="fas fa-file-pdf"></i>
                             </a>
                         </td>
