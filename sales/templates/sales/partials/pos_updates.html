@@ -1,0 +1,14 @@
+<span id="cart-subtotal" hx-swap-oob="true">{{ total_invoice|floatformat:0 }} F</span>
+
+<h4 id="cart-total-val" hx-swap-oob="true" class="fw-bold text-primary">{{ total_invoice|floatformat:0 }} F</h4>
+
+<div id="balance-zone" hx-swap-oob="true">
+    <label class="small fw-bold text-uppercase {% if balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+        {% if balance >= 0 %}Monnaie à rendre{% else %}Reste à payer (Créance){% endif %}
+    </label>
+    <h3 class="fw-bold {% if balance >= 0 %}text-primary{% else %}text-danger{% endif %}">
+        {{ balance_abs|floatformat:0 }} F
+    </h3>
+</div>
+
+<input type="hidden" id="final-total-hidden" name="total_amount" value="{{ total_invoice }}" hx-swap-oob="true">

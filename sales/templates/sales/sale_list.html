@@ -1,43 +1,50 @@
 {% extends 'base.html' %}
-
-{% block content %}
+{% load humanize %} {% block content %}
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card border-0 shadow-sm bg-primary text-white">
             <div class="card-body p-3">
-                <div class="small opacity-75">Ventes du jour</div>
-                <h3 class="fw-bold mb-0">{{ stats.sales_count }}</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small opacity-75">Ventes du jour</div>
+                        <h3 class="fw-bold mb-0">{{ stats.sales_count }}</h3>
+                    </div>
+                    <i class="fas fa-shopping-basket fa-2x opacity-25"></i>
+                </div>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm bg-white">
+        <div class="card border-0 shadow-sm bg-white border-start border-primary border-4">
             <div class="card-body p-3">
-                <div class="small text-muted">Chiffre d'Affaires (Aujourd'hui)</div>
-                <h3 class="fw-bold mb-0 text-dark">{{ stats.total_revenue }} F</h3>
+                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Chiffre d'Affaires</div>
+                <h3 class="fw-bold mb-0 text-dark">{{ stats.total_revenue|intcomma }} F</h3>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-0 shadow-sm bg-white">
+        <div class="card border-0 shadow-sm bg-white border-start border-success border-4">
             <div class="card-body p-3">
-                <div class="small text-muted">Encaissé (Trésorerie)</div>
-                <h3 class="fw-bold mb-0 text-success">{{ stats.total_collected }} F</h3>
+                <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Encaissé (Cash)</div>
+                <h3 class="fw-bold mb-0 text-success">{{ stats.total_collected|intcomma }} F</h3>
             </div>
         </div>
     </div>
 </div>
 
 <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-history me-2 text-primary"></i>Journal des Ventes</h5>
+    </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
                     <tr class="small text-uppercase text-muted fw-bold">
-                        <th class="ps-4">Facture</th>
+                        <th class="ps-4">N° Facture</th>
                         <th>Client</th>
-                        <th>Date</th>
-                        <th>Montant</th>
+                        <th>Date & Heure</th>
+                        <th>Montant Total</th>
                         <th>Statut</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
@@ -46,31 +53,39 @@
                     {% for sale in sales %}
                     <tr>
                         <td class="ps-4">
-                            <span class="fw-bold text-dark">{{ sale.sale_number }}</span>
+                            <span class="badge bg-light text-dark border fw-bold">{{ sale.sale_number }}</span>
                         </td>
-                        <td>{{ sale.client.first_name }} {{ sale.client.last_name }}</td>
-                        <td>{{ sale.date|date:"d/m/Y H:i" }}</td>
-                        <td class="fw-bold">{{ sale.total_amount }} F</td>
                         <td>
-                            {% if sale.status == 'paye' %}
-                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">Payé</span>
-                            {% elif sale.status == 'partiel' %}
-                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">Partiel</span>
+                            <div class="fw-bold text-dark">{{ sale.client.first_name }} {{ sale.client.last_name }}</div>
+                            <small class="text-muted">{{ sale.client.phone|default:"" }}</small>
+                        </td>
+                        <td class="small text-muted">{{ sale.date|date:"d/m/Y" }} à {{ sale.date|date:"H:i" }}</td>
+                        <td class="fw-bold text-dark">{{ sale.total_amount|intcomma }} F</td>
+                        <td>
+                            {% if sale.total_amount == sale.amount_paid %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Payé</span>
+                            {% elif sale.amount_paid > 0 %}
+                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3">Partiel</span>
                             {% else %}
-                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill">Impayé</span>
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3">Impayé</span>
                             {% endif %}
                         </td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'sales:generate-invoice' sale.id %}" target="_blank" class="btn btn-sm btn-light border text-danger">
-                                <i class="fas fa-file-pdf"></i>
+                            <a href="{% url 'sales:generate-invoice' sale.id %}" target="_blank" class="btn btn-sm btn-outline-danger shadow-sm">
+                                <i class="fas fa-file-pdf me-1"></i> PDF
                             </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
                         <td colspan="6" class="text-center py-5">
-                            <i class="fas fa-receipt fa-3x text-light mb-3"></i>
-                            <p class="text-muted">Aucune transaction trouvée dans le journal.</p>
+                            <div class="text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3 opacity-25"></i>
+                                <p>Aucune vente enregistrée aujourd'hui.</p>
+                                <a href="{% url 'sales:pos-interface' %}" class="btn btn-primary btn-sm rounded-pill">
+                                    Faire une vente
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
