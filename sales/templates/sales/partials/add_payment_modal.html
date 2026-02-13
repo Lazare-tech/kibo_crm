@@ -1,0 +1,43 @@
+<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" id="paymentModal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Enregistrer un versement</h5>
+                <button type="button" class="btn-close btn-close-white" onclick="document.getElementById('modal-container').innerHTML=''"></button>
+            </div>
+            <form hx-post="{% url 'sales:add-payment' sale.id %}" hx-target="#modal-container">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="text-center mb-4 bg-light p-3 rounded">
+                        <small class="text-muted text-uppercase d-block">Reste à payer ({{ sale.sale_number }})</small>
+                        <h2 class="fw-bold text-danger mb-0">{{ sale.balance_due|floatformat:0 }} F</h2>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Montant versé</label>
+                        <div class="input-group">
+                            <input type="number" name="amount" class="form-control form-control-lg fw-bold text-primary" 
+                                   max="{{ sale.balance_due }}" min="1" placeholder="Ex: 5000" required autofocus>
+                            <span class="input-group-text bg-white fw-bold">F CFA</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-uppercase">Moyen de paiement</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">💵 Espèces</option>
+                            <option value="orange_money">📱 Orange Money</option>
+                            <option value="moov_money">📱 Moov Money</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-3">
+                    <button type="button" class="btn btn-light rounded-pill px-4" onclick="document.getElementById('modal-container').innerHTML=''">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                        CONFIRMER LE VERSEMENT
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

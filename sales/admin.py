@@ -3,7 +3,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Sale, SaleItem
+from .models import Sale, SaleItem,Payment
 
 class SaleItemInline(admin.TabularInline):
     model = SaleItem
@@ -61,3 +61,30 @@ class SaleAdmin(admin.ModelAdmin):
         except:
             return "Indisponible"
     view_pdf_link.short_description = "Action"
+    ######
+# Permet d'ajouter/voir des paiements directement dans la fiche d'une vente
+class PaymentInline(admin.TabularInline):
+    model = Payment
+    extra = 1 # Propose une ligne vide pour un nouveau versement
+    readonly_fields = ('date_payment',)
+    fields = ('amount', 'payment_method', 'date_payment')
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    # Liste principale des versements
+    list_display = ('sale_link', 'colored_amount', 'payment_method', 'date_payment')
+    list_filter = ('payment_method', 'date_payment')
+    search_fields = ('sale__sale_number', 'sale__client__first_name', 'sale__client__last_name')
+    date_hierarchy = 'date_payment' # Ajoute une barre de navigation par date en haut
+    
+    # Empêcher la modification d'un paiement déjà enregistré pour la sécurité comptable
+    # readonly_fields = ('sale', 'amount', 'date_payment', 'payment_method')
+
+    def sale_link(self, obj):
+        # Crée un lien vers la vente correspondante
+        return format_html('<a href="/admin/sales/sale/{}/change/">{}</a>', obj.sale.id, obj.sale.sale_number)
+    sale_link.short_description = "N° Facture"
+
+    def colored_amount(self, obj):
+        return format_html('<span style="color: #28a745; font-weight: bold;">+ {} F</span>', obj.amount)
+    colored_amount.short_description = "Montant versé"

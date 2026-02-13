@@ -53,14 +53,19 @@
                     {% for sale in sales %}
                     <tr>
                         <td class="ps-4">
-                            <span class="badge bg-light text-dark border fw-bold">{{ sale.sale_number }}</span>
+                                
+                             <a href="{% url 'sales:sale-detail' sale.id %}" class="fw-bold text-primary text-decoration-none">
+        {{ sale.sale_number }}
+    </a>
+
                         </td>
+                        
                         <td>
                             <div class="fw-bold text-dark">{{ sale.client.first_name }} {{ sale.client.last_name }}</div>
                             <small class="text-muted">{{ sale.client.phone|default:"" }}</small>
                         </td>
                         <td class="small text-muted">{{ sale.date|date:"d/m/Y" }} à {{ sale.date|date:"H:i" }}</td>
-                        <td class="fw-bold text-dark">{{ sale.total_amount|intcomma }} F</td>
+                        <td class="fw-bold text-dark">{{ stats.total_collected|intcomma }} F</td>
                         <td>
                             {% if sale.total_amount == sale.amount_paid %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Payé</span>

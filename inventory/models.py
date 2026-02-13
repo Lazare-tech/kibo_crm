@@ -12,6 +12,9 @@ class Category(models.Model):
     class Meta:
         verbose_name = "Catégorie"
 
+    def __str__(self):
+        return self.name
+    
 class Product(models.Model):
     UNIT_CHOICES = (
         ('unite', 'Unité'),

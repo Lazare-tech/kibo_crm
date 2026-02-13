@@ -28,6 +28,39 @@ class Sale(models.Model):
     def balance_due(self):
         return self.total_amount - self.amount_paid
 
+    def update_payment_status(self):
+        """
+        Recalcule le montant total payé et met à jour le statut de la vente.
+        """
+        from django.db.models import Sum
+        
+        # On fait la somme de tous les paiements liés à cette vente
+        total_paid = self.payments.aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        # On met à jour les champs de la vente
+        self.amount_paid = total_paid
+        
+        if self.amount_paid >= self.total_amount:
+            self.status = 'paye'
+        elif self.amount_paid > 0:
+            self.status = 'partiel'
+        else:
+            self.status = 'en_attente'
+            
+        # On sauvegarde les modifications de la vente sans déclencher de boucle infinie
+        self.save()
+    ####
+    # Dans models.py, sous la classe Sale
+    @property
+    def balance_due(self):
+        # C'est ici que la magie de la déduction opère
+        return self.total_amount - self.amount_paid
+    #####
+    def save(self, *args, **kwargs):
+        if not self.sale_number:
+            self.sale_number = f"FAC-{uuid.uuid4().hex[:8].upper()}"
+        super().save(*args, **kwargs)
+    ###
     def __str__(self):
         return f"{self.sale_number} - {self.client}"
 
@@ -44,3 +77,22 @@ class SaleItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
+###
+class Payment(models.Model):
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="payments")
+    amount = models.DecimalField(max_digits=12, decimal_places=0,verbose_name="Montant du paiement")
+    date_payment = models.DateTimeField(auto_now_add=True,verbose_name="Date du paiement")
+    payment_method = models.CharField(max_length=50, choices=[
+        ('cash', 'Espèces'),
+        ('orange_money', 'Orange Money'),
+        ('moov_money', 'Moov Money'),
+        ('virement', 'Virement')
+    ], default='cash')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Après chaque paiement, on met à jour le montant total payé dans la vente
+        self.sale.update_payment_status()
+
+    def __str__(self):
+        return f"Paiement de {self.amount} F pour {self.sale.sale_number}"

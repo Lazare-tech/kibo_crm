@@ -1,5 +1,6 @@
 from datetime import timezone
 from django.shortcuts import render, get_object_or_404,redirect
+from inventory import models
 from inventory.models import Product
 from .models import Sale, SaleItem
 from inventory.models import Category
@@ -20,7 +21,10 @@ def pos_interface(request):
     products = Product.objects.filter(quantity__gt=0) # On ne montre que ce qui est disponible
     categories = Category.objects.all()
     #
-    clients = Client.objects.all().order_by('last_name')
+    clients = Client.objects.all()
+    print(
+        "clients",clients
+    )
     context={
         'products':products,
         'categories':categories,
@@ -137,7 +141,15 @@ def calculate_totals(request):
     # Calcul du sous-total
     total_invoice = 0
     for p, q in zip(prices, quantities):
-        total_invoice += float(p or 0) * int(q or 1)
+        try:
+            # NETTOYAGE : on enlève les espaces normaux et les espaces insécables (\xa0)
+            # On remplace aussi la virgule par un point au cas où
+            clean_price = str(p).replace('\xa0', '').replace(' ', '').replace(',', '.')
+            
+            if clean_amount := clean_price:
+                total_invoice += float(clean_amount) * int(q or 1)
+        except (ValueError, TypeError):
+            continue
     
     balance = amount_received - total_invoice
     
@@ -270,3 +282,66 @@ def validate_sale(request):
         return redirect('sales:sale-list')
     
     return redirect('sales:pos-interface')
+###
+def update_payment_status(self):
+    # On somme tous les paiements liés à cette vente
+    total_paid = self.payments.aggregate(models.Sum('amount'))['amount__sum'] or 0
+    self.amount_paid = total_paid
+    
+    if self.amount_paid >= self.total_amount:
+        self.status = 'paye'
+    elif self.amount_paid > 0:
+        self.status = 'partiel'
+    else:
+        self.status = 'en_attente'
+    
+    self.save()
+###
+@login_required
+def debt_list(request):
+    # On filtre les ventes non totalement payées
+    debts = Sale.objects.exclude(status='paye').order_by('-date')
+    
+    # Calcul du total des créances dehors
+    total_debt = sum(s.balance_due for s in debts)
+    
+    return render(request, 'sales/debt_list.html', {
+        'debts': debts,
+        'total_debt': total_debt
+    })
+####
+from django.http import HttpResponse
+from .models import Payment, Sale
+
+@login_required
+def add_payment(request, sale_id):
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    if request.method == 'POST':
+        amount = request.POST.get('amount')
+        method = request.POST.get('payment_method')
+        
+        if amount:
+            # Création du paiement (le signal/save du modèle mettra à jour la Sale)
+            Payment.objects.create(
+                sale=sale,
+                amount=float(amount),
+                payment_method=method
+            )
+            # On renvoie un script pour fermer le modal et rafraîchir la liste des créances
+            return HttpResponse('<script>window.location.reload();</script>')
+    context={
+        'sale':sale
+    }
+    return render(request, 'sales/partials/add_payment_modal.html', context)
+###
+@login_required
+def sale_detail(request, sale_id):
+    sale = get_object_or_404(Sale, id=sale_id)
+    # On récupère tous les paiements liés à cette vente, du plus récent au plus ancien
+    payments = sale.payments.all().order_by('-date_payment')
+    context={
+        'sale':sale,
+        'payments':payments
+    }
+    return render(request, 'sales/sale_detail.html', context)

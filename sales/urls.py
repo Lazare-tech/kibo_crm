@@ -10,7 +10,11 @@ urlpatterns = [
     path('validate/', sales.views.validate_sale, name='validate-sale'), # Ajoute cette ligne
     path('history/', sales.views.sale_list, name='sale-list'),
     path('generate/<int:sale_id>/', sales.views.generate_invoice_pdf, name='generate-invoice'),
+    ###
 path('calculate-pos/', sales.views.calculate_totals, name='calculate-totals'),
     path('preview-sale/', sales.views.preview_sale, name='preview-sale'),
+    path('add-payment/<int:sale_id>/', sales.views.add_payment, name='add-payment'),
+    path('sale/<int:sale_id>/', sales.views.sale_detail, name='sale-detail'),
+    path('debts/', sales.views.debt_list, name='debt-list'),
 
 ]

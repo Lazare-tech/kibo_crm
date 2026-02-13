@@ -1,14 +1,19 @@
 <tr class="align-middle">
     <td>
-        <small class="fw-bold">{{ product.name }}</small>
+        <div class="fw-bold text-dark small">{{ product.name }}</div>
         <input type="hidden" name="product_ids[]" value="{{ product.id }}">
-        <input type="hidden" name="prices[]" value="{{ product.selling_price|stringformat:'.2f' }}">
+        <input type="hidden" name="prices[]" value="{{ product.selling_price }}">
     </td>
     <td>
         <input type="number" name="quantities[]" value="1" min="1" 
-               class="form-control form-control-sm item-qty" style="width: 60px;">
+               class="form-control form-control-sm item-qty shadow-none border-light bg-light" 
+               style="width: 65px;">
     </td>
-    <td class="text-end fw-bold">
-        {{ product.selling_price|floatformat:0 }} F
+    <td class="text-end fw-bold">{{ product.selling_price }} F</td>
+    <td class="text-end">
+        <button type="button" class="btn btn-link text-danger p-0 shadow-none" 
+                onclick="this.closest('tr').remove(); htmx.trigger('#cart-items', 'calculate');">
+            <i class="fas fa-times-circle"></i>
+        </button>
     </td>
-    </tr>
+</tr>
