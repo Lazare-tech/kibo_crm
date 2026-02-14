@@ -34,7 +34,6 @@
         <div class="card border-0 shadow-sm h-100 d-flex flex-column">
             <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold"><i class="fas fa-shopping-cart me-2"></i> Panier</h6>
-                <button type="button" class="btn btn-sm btn-outline-light border-0" onclick="location.reload()"><i class="fas fa-trash"></i></button>
             </div>
             
             <div class="card-body flex-grow-1 overflow-auto" style="max-height: 400px;">
@@ -57,15 +56,23 @@
             </div>
 
             <div class="card-footer bg-light p-4">
-                <div class="mb-3">
-                    <label class="small fw-bold text-muted text-uppercase">Client</label>
-                    <select name="client_id" class="form-select form-select-sm border-0 shadow-sm" required>
-                        <option value="">-- Choisir un client --</option>
-                        {% for client in clients %}
-                            <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <div class="mb-3">
+    <label class="small fw-bold text-muted text-uppercase d-flex justify-content-between">
+        Client 
+        <a href="javascript:void(0)" 
+           hx-get="{% url 'leads:quick-create-client' %}" 
+           hx-target="#modal-container"
+           class="text-primary text-decoration-none">
+           <i class="fas fa-plus-circle"></i> Nouveau
+        </a>
+    </label>
+    <select name="client_id" id="client-select" class="form-select form-select-sm border-0 shadow-sm" required>
+        <option value="">-- Choisir un client --</option>
+        {% for client in clients %}
+            <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
+        {% endfor %}
+    </select>
+</div>
 
                 <hr class="my-3 opacity-10">
 

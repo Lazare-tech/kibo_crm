@@ -5,6 +5,10 @@ import uuid
 
 # Create your models here.
 
+from django.db import models
+from django.db.models import Sum  # Import indispensable pour le calcul
+import uuid
+
 class Sale(models.Model):
     PAYMENT_STATUS = (
         ('en_attente', 'En attente'),
@@ -13,33 +17,27 @@ class Sale(models.Model):
     )
 
     sale_number = models.CharField(max_length=20, unique=True, editable=False)
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="sales",verbose_name="Client")
-    date = models.DateTimeField(auto_now_add=True,verbose_name="Date de vente")
-    total_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0,verbose_name="Montant total")
-    amount_paid = models.DecimalField(max_digits=12, decimal_places=0, default=0,verbose_name="Montant payé")
+    client = models.ForeignKey('leads.Client', on_delete=models.CASCADE, related_name="sales", verbose_name="Client")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="Date de vente")
+    total_amount = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Montant total")
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=0, default=0, verbose_name="Montant payé")
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='en_attente')
-
-    def save(self, *args, **kwargs):
-        if not self.sale_number:
-            self.sale_number = f"FAC-{uuid.uuid4().hex[:8].upper()}"
-        super().save(*args, **kwargs)
 
     @property
     def balance_due(self):
+        """Calcule dynamiquement le reste à payer."""
         return self.total_amount - self.amount_paid
 
     def update_payment_status(self):
-        """
-        Recalcule le montant total payé et met à jour le statut de la vente.
-        """
-        from django.db.models import Sum
+        """Recalcule le cumul des paiements et met à jour le statut."""
+        # Calcul de la somme de tous les objets Payment liés (via related_name="payments")
+        result = self.payments.aggregate(Sum('amount'))
+        total_paid = result['amount__sum'] or 0
         
-        # On fait la somme de tous les paiements liés à cette vente
-        total_paid = self.payments.aggregate(Sum('amount'))['amount__sum'] or 0
-        
-        # On met à jour les champs de la vente
+        # Mise à jour du champ cumulatif
         self.amount_paid = total_paid
         
+        # Logique de mise à jour du statut
         if self.amount_paid >= self.total_amount:
             self.status = 'paye'
         elif self.amount_paid > 0:
@@ -47,20 +45,15 @@ class Sale(models.Model):
         else:
             self.status = 'en_attente'
             
-        # On sauvegarde les modifications de la vente sans déclencher de boucle infinie
+        # Sauvegarde finale de la vente
         self.save()
-    ####
-    # Dans models.py, sous la classe Sale
-    @property
-    def balance_due(self):
-        # C'est ici que la magie de la déduction opère
-        return self.total_amount - self.amount_paid
-    #####
+
     def save(self, *args, **kwargs):
+        # Génération du numéro de facture unique s'il n'existe pas
         if not self.sale_number:
             self.sale_number = f"FAC-{uuid.uuid4().hex[:8].upper()}"
         super().save(*args, **kwargs)
-    ###
+
     def __str__(self):
         return f"{self.sale_number} - {self.client}"
 
@@ -78,10 +71,12 @@ class SaleItem(models.Model):
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
 ###
+from django.db import models, transaction
+
 class Payment(models.Model):
     sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name="payments")
-    amount = models.DecimalField(max_digits=12, decimal_places=0,verbose_name="Montant du paiement")
-    date_payment = models.DateTimeField(auto_now_add=True,verbose_name="Date du paiement")
+    amount = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Montant du paiement")
+    date_payment = models.DateTimeField(auto_now_add=True, verbose_name="Date du paiement")
     payment_method = models.CharField(max_length=50, choices=[
         ('cash', 'Espèces'),
         ('orange_money', 'Orange Money'),
@@ -90,9 +85,13 @@ class Payment(models.Model):
     ], default='cash')
 
     def save(self, *args, **kwargs):
+        # 1. On sauvegarde le paiement normalement
         super().save(*args, **kwargs)
-        # Après chaque paiement, on met à jour le montant total payé dans la vente
-        self.sale.update_payment_status()
+        
+        # 2. Sécurité KIBO : On attend que la transaction soit validée (committed)
+        # pour demander à la vente de recalculer le total. 
+        # Cela évite que update_payment_status ne "rate" le premier versement.
+        transaction.on_commit(lambda: self.sale.update_payment_status())
 
     def __str__(self):
         return f"Paiement de {self.amount} F pour {self.sale.sale_number}"

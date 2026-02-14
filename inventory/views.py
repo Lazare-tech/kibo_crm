@@ -9,6 +9,8 @@ from django.db.models import Sum, Q
 from django.db import transaction
 from xhtml2pdf import pisa
 from django.template.loader import get_template
+from django.utils import timezone
+from datetime import timedelta
 # Create your views here.
 
 @login_required
@@ -80,7 +82,51 @@ def stock_history(request, pk):
         'user': user
     }
     return render(request, 'inventory/stock_history.html', context)
-#####
+@login_required
+@login_required
+def all_stock_history(request):
+    # 1. Préparation des dates pour les stats fixes
+    today = timezone.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+    start_of_month = today.replace(day=1)
+
+    # 2. Initialisation du QuerySet (On le crée d'abord !)
+    movements = StockMovement.objects.select_related('product', 'user').all().order_by('-date')
+
+    # 3. Récupération des filtres depuis la requête GET
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    search_query = request.GET.get('search')
+
+    # 4. Application des filtres dynamiques sur le QuerySet
+    if start_date and end_date:
+        movements = movements.filter(date__date__range=[start_date, end_date])
+    elif start_date:
+        movements = movements.filter(date__date__gte=start_date)
+    
+    if search_query:
+        movements = movements.filter(product__name__icontains=search_query)
+
+    # 5. Calcul des stats (On utilise un QuerySet séparé pour que les cartes restent fixes)
+    all_outs = StockMovement.objects.filter(movement_type='sortie')
+    stats = {
+        'out_today': all_outs.filter(date__date=today).aggregate(Sum('quantity'))['quantity__sum'] or 0,
+        'out_week': all_outs.filter(date__date__gte=start_of_week).aggregate(Sum('quantity'))['quantity__sum'] or 0,
+        'out_month': all_outs.filter(date__date__gte=start_of_month).aggregate(Sum('quantity'))['quantity__sum'] or 0,
+    }
+
+    context = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'movements': movements,
+        'stats': stats
+    }
+
+    # 6. Logique HTMX : Si c'est une requête HTMX, on renvoie uniquement les lignes du tableau
+    if request.headers.get('HX-Request'):
+        return render(request, 'inventory/partials/history_table_rows.html', context)
+
+    return render(request, 'inventory/all_stock_history.html', context)#####
 @login_required
 def get_stock_form(request, pk):
     product = get_object_or_404(Product, pk=pk)

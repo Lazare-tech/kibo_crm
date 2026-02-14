@@ -295,3 +295,27 @@ def create_invoice(request, client_pk):
         'client': client
     }
     return render(request, "leads/invoice_create.html", context)
+##
+@login_required
+def quick_create_client(request):
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        phone = request.POST.get('phone')
+        
+        client = Client.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone
+        )
+        
+        # On renvoie une option HTML que HTMX va injecter et sélectionner
+        return HttpResponse(f"""
+            <option value="{client.id}" selected>{client.first_name} {client.last_name}</option>
+            <script>
+                document.getElementById('client-select').value = "{client.id}";
+                bootstrap.Modal.getInstance(document.getElementById('modal-container').querySelector('.modal')).hide();
+            </script>
+        """)
+    
+    return render(request, 'leads/partials/quick_client_modal.html')

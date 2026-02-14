@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.conf import settings
 # Create your models here.
 
 class Category(models.Model):
@@ -51,7 +51,13 @@ class StockMovement(models.Model):
         ('entree', 'Entrée (Achat/Retour)'),
         ('sortie', 'Sortie (Vente/Perte)'),
     )
-    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name="Vendeur / Auteur"
+    )
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="movements")
     quantity = models.IntegerField()
     movement_type = models.CharField(max_length=10, choices=MOVEMENT_TYPES,verbose_name="Type de mouvement")

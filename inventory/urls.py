@@ -11,4 +11,5 @@ urlpatterns = [
     path('product/<int:pk>/history/', inventory.views.stock_history, name='stock-history'),
     # --- Téléchargements & Exports ---
     path('product/<int:pk>/export-pdf/', inventory.views.export_stock_pdf, name='export-stock-pdf'),
+    path('history/all/', inventory.views.all_stock_history, name='all-stock-history'),
 ]

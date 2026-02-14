@@ -44,7 +44,7 @@
                         <th class="ps-4">N° Facture</th>
                         <th>Client</th>
                         <th>Date & Heure</th>
-                        <th>Montant Total</th>
+                        <th>Montant Total recu</th>
                         <th>Statut</th>
                         <th class="text-end pe-4">Actions</th>
                     </tr>
@@ -65,7 +65,7 @@
                             <small class="text-muted">{{ sale.client.phone|default:"" }}</small>
                         </td>
                         <td class="small text-muted">{{ sale.date|date:"d/m/Y" }} à {{ sale.date|date:"H:i" }}</td>
-                        <td class="fw-bold text-dark">{{ stats.total_collected|intcomma }} F</td>
+                        <td class="fw-bold text-dark">{{ sale.amount_paid|intcomma }} F</td>
                         <td>
                             {% if sale.total_amount == sale.amount_paid %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3">Payé</span>

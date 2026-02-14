@@ -102,13 +102,13 @@ class Task(models.Model):
 #####
 class Client(models.Model):
     lead = models.OneToOneField(Lead, on_delete=models.SET_NULL, null=True, blank=True)
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone_number = models.CharField(max_length=20)
-    address = models.TextField(blank=True, null=True)
+    first_name = models.CharField(max_length=100,verbose_name="Prénom")
+    last_name = models.CharField(max_length=100,verbose_name="Nom")
+    email = models.EmailField(verbose_name="Email")
+    phone_number = models.CharField(max_length=20,verbose_name="Téléphone")
+    address = models.TextField(blank=True, null=True,verbose_name="Adresse")
     is_active = models.BooleanField(default=True)
-    date_converted = models.DateTimeField(auto_now_add=True)
+    date_converted = models.DateTimeField(auto_now_add=True,verbose_name="Date de conversion")
 
     def __str__(self):
         return f"CLIENT: {self.first_name} {self.last_name}"

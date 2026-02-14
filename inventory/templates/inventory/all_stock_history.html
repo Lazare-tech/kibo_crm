@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block content %}
+{% include 'inventory/partials/stock_stats_cards.html' %} 
+<div class="card border-0 shadow-sm p-4 mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">Du</label>
+            <input type="date" name="start_date" 
+                   hx-get="{% url 'inventory:all-stock-history' %}" 
+                   hx-trigger="change" 
+                   hx-target="#history-results" 
+                   hx-push-url="true"
+                   class="form-control border-0 bg-light shadow-none">
+        </div>
+        <div class="col-md-3">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">Au</label>
+            <input type="date" name="end_date" 
+                   hx-get="{% url 'inventory:all-stock-history' %}" 
+                   hx-trigger="change" 
+                   hx-target="#history-results" 
+                   hx-push-url="true"
+                   class="form-control border-0 bg-light shadow-none">
+        </div>
+        <div class="col-md-4">
+            <label class="small fw-bold text-muted mb-2 text-uppercase">Rechercher un produit</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-0"><i class="fas fa-search"></i></span>
+                <input type="text" name="search" 
+                       hx-get="{% url 'inventory:all-stock-history' %}" 
+                       hx-trigger="keyup changed delay:500ms" 
+                       hx-target="#history-results" 
+                       placeholder="Nom ou SKU..."
+                       class="form-control border-0 bg-light shadow-none">
+            </div>
+        </div>
+        <div class="col-md-2 text-end">
+            <a href="{% url 'inventory:all-stock-history' %}" class="btn btn-outline-secondary rounded-pill w-100">
+                <i class="fas fa-undo me-2"></i>Reset
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm overflow-hidden">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Date & Heure</th>
+                    <th>Désignation Produit</th>
+                    <th>Type</th>
+                    <th class="text-center">Quantité</th>
+                    <th>Responsable</th>
+                    <th class="pe-4">Raison</th>
+                </tr>
+            </thead>
+            <tbody id="history-results">
+                {% include 'inventory/partials/history_table_rows.html' %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

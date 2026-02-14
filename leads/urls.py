@@ -20,9 +20,11 @@ urlpatterns = [
     path('deal/<int:pk>/update-stage/', leads.views.update_deal_stage, name='update-deal-stage'),
     # Conversion d'un lead en client
     path('clients/', leads.views.client_list, name='client-list'),
-path('convert/<int:pk>/', leads.views.convert_lead_to_client, name='convert-to-client'),
-# PDF pour une facture
-path('invoice/<int:pk>/pdf/', leads.views.render_invoice_pdf, name='invoice-pdf'),
-path('client/<int:client_pk>/invoice/create/', leads.views.create_invoice, name='create-invoice'),
+    path('convert/<int:pk>/', leads.views.convert_lead_to_client, name='convert-to-client'),
+    # PDF pour une facture
+    path('invoice/<int:pk>/pdf/', leads.views.render_invoice_pdf, name='invoice-pdf'),
+    path('client/<int:client_pk>/invoice/create/', leads.views.create_invoice, name='create-invoice'),
+    path('client-passage/', leads.views.quick_create_client, name='quick-create-client')
+
 
 ]
