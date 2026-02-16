@@ -12,4 +12,7 @@ urlpatterns = [
     # --- Téléchargements & Exports ---
     path('product/<int:pk>/export-pdf/', inventory.views.export_stock_pdf, name='export-stock-pdf'),
     path('history/all/', inventory.views.all_stock_history, name='all-stock-history'),
+    #gestion commandes
+    path('order/<int:order_id>/receive/', inventory.views.receive_order, name='receive-order'),
+    path('orders/', inventory.views.order_list, name='order-list'),
 ]

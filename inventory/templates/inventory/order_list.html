@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-0">Commandes Fournisseurs</h4>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Logistique</a></li>
+                <li class="breadcrumb-item active">Commandes</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="{% url 'admin:inventory_supplierorder_add' %}" class="btn btn-primary rounded-pill px-4">
+        <i class="fas fa-plus me-2"></i>Passer une commande
+    </a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-primary border-4">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">En cours</h6>
+                <h3 class="fw-bold mb-0">{{ stats.total_pending }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-warning border-4">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Brouillons</h6>
+                <h3 class="fw-bold mb-0">{{ stats.total_draft }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm border-start border-success border-4">
+            <div class="card-body">
+                <h6 class="text-muted small text-uppercase fw-bold">Réceptionnées</h6>
+                <h3 class="fw-bold mb-0">{{ stats.total_received }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">N° Commande</th>
+                        <th>Fournisseur</th>
+                        <th>Date</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ order.order_number }}</td>
+                        <td>
+                            <div class="fw-bold">{{ order.supplier.name }}</div>
+                            <small class="text-muted">{{ order.supplier.phone }}</small>
+                        </td>
+            <td>
+    {% if order.status == 'recu' %}
+        <div class="small text-success fw-bold">Reçue le :</div>
+        <span>{{ order.date_received|date:"d M Y" }}</span>
+    {% elif order.status == 'annule' %}
+        <div class="small text-danger fw-bold">Annulée le :</div>
+        <span>{{ order.date_cancelled|date:"d M Y" }}</span>
+    {% else %}
+        <div class="small text-muted fw-bold">Prévue le :</div>
+        <span class="{% if not order.expected_date %}text-muted italic small{% endif %}">
+            {{ order.expected_date|date:"d M Y"|default:"Non définie" }}
+        </span>
+    {% endif %}
+</td>                        
+                        <td class="fw-bold text-dark">{{ order.total_amount|intcomma }} F</td>
+                        <td>
+                            {% if order.status == 'brouillon' %}
+                                <span class="badge bg-secondary-subtle text-secondary px-3">Brouillon</span>
+                            {% elif order.status == 'commande' %}
+                                <span class="badge bg-warning-subtle text-warning px-3 border border-warning-subtle">Envoyée</span>
+                            {% elif order.status == 'recu' %}
+                                                            <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                                <i class="fas fa-arrow-trend-up me-1"></i> Entrée
+                            </span>
+                            {% else %}
+                                <span class="badge bg-danger-subtle text-danger px-3">{{ order.get_status_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group shadow-sm rounded-pill overflow-hidden">
+                                <a href="{% url 'admin:inventory_supplierorder_change' order.id %}" class="btn btn-white btn-sm px-3 border-end">
+                                    <i class="fas fa-edit text-muted"></i>
+                                </a>
+                                {% if order.status == 'commande' %}
+                                <a href="{% url 'inventory:receive-order' order.id %}" 
+                                   class="btn btn-success btn-sm px-3" 
+                                   onclick="return confirm('Voulez-vous intégrer ces articles au stock physique ?')">
+                                    <i class="fas fa-check-double"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <img src="{% static 'img/empty-order.svg' %}" alt="" style="width: 80px;" class="mb-3 opacity-25">
+                            <p class="text-muted">Aucune commande enregistrée.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}

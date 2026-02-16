@@ -1,9 +1,10 @@
+from pyexpat.errors import messages
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from .forms import StockAdjustmentForm
-from .models import Product, Category
+from .models import Product, Category,Supplier,SupplierOrder
 from .models import StockMovement
 from django.db.models import Sum, Q
 from django.db import transaction
@@ -203,3 +204,53 @@ def export_stock_pdf(request, pk):
     if pisa_status.err:
         return HttpResponse('Erreur lors de la génération du PDF', status=500)
     return response
+##########################################################################################################
+                                                #GESTION COMMANDES
+##########################################################################################################
+@login_required
+def order_list(request):
+    # Correction : on utilise 'date_order' pour le tri et 'created_by' pour le select_related
+    orders = SupplierOrder.objects.select_related('supplier', 'created_by').all().order_by('-date_order')
+    
+    # Statistiques basées sur tes STATUS_CHOICES réels
+    stats = {
+        'total_pending': orders.filter(status='commande').count(),
+        'total_waiting': orders.filter(status='en_attente').count(),
+        'total_received': orders.filter(status='recu').count(),
+    }
+    
+    return render(request, 'inventory/order_list.html', {
+        'orders': orders,
+        'stats': stats
+    })
+################
+@login_required
+@transaction.atomic
+def receive_order(request, order_id):
+    order = get_object_or_404(SupplierOrder, id=order_id, status='commande')
+    
+    # 1. Parcourir chaque ligne de la commande
+    for line in order.lines.all():
+        product = line.product
+        
+        # 2. Créer le mouvement de stock (Entrée)
+        from .models import StockMovement
+        StockMovement.objects.create(
+            product=product,
+            quantity=line.quantity,
+            movement_type='entree',
+            reason=f"Réception commande {order.order_number}",
+            user=request.user
+        )
+        
+        # 3. Mettre à jour le stock physique et le prix d'achat si besoin
+        product.quantity += line.quantity
+        product.purchase_price = line.unit_cost # On met à jour le prix d'achat avec le dernier prix connu
+        product.save()
+    
+    # 4. Marquer la commande comme reçue
+    order.status = 'recu'
+    order.save()
+    
+    messages.success(request, f"La commande {order.order_number} a été intégrée au stock !")
+    return redirect('inventory:order-detail', order_id=order.id)

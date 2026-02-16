@@ -1,0 +1,10 @@
+<tr class="order-line">
+    <td>
+        <select name="product_ids[]" class="form-select select2">
+            {% for p in products %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+        </select>
+    </td>
+    <td><input type="number" name="quantities[]" class="form-control" value="1" min="1"></td>
+    <td><input type="number" name="costs[]" class="form-control" placeholder="Prix d'achat"></td>
+    <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+</tr>

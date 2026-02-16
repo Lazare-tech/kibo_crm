@@ -97,12 +97,19 @@
             </a>
 
             <div class="menu-label">Logistique</div>
-            <a class="nav-link {% if request.resolver_match.app_name == 'inventory' %}active{% endif %}" href="{% url 'inventory:product-list' %}">
-                <i class="fas fa-boxes"></i> Gestion Stocks
-            </a>
-            <a class="nav-link {% if request.resolver_match.app_name == 'inventory'%}active{% endif %}" href="{% url 'inventory:all-stock-history'%}">
-            <i class="fas fa-history"></i> Historique Stock</a>
-            <a class="nav-link opacity-50" href="#"><i class="fas fa-truck"></i> Livraisons</a>
+
+<a class="nav-link {% if request.resolver_match.url_name == 'product-list' %}active{% endif %}" href="{% url 'inventory:product-list' %}">
+    <i class="fas fa-boxes"></i> Gestion Stocks
+</a>
+
+<a class="nav-link {% if request.resolver_match.url_name == 'all-stock-history' %}active{% endif %}" href="{% url 'inventory:all-stock-history' %}">
+    <i class="fas fa-history"></i> Historique Stock
+</a>
+
+<a class="nav-link {% if 'order' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'inventory:order-list' %}">
+    <i class="fas fa-shopping-cart"></i> Commandes 
+</a>
+
             <div class="menu-label">Ventes & Finance</div>
 <a class="nav-link {% if request.resolver_match.url_name == 'pos-interface' %}active{% endif %}" href="{% url 'sales:pos-interface' %}">
     <i class="fas fa-cash-register"></i> Caisse (POS)
