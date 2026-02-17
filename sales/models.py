@@ -1,8 +1,8 @@
 from django.db import models
 from leads.models import Client  # Import de ton app CRM
-from inventory.models import Product  # Import de ton app Stock
+from inventory.models import Product,StockMovement  # Import de ton app Stock
 import uuid
-
+from django.core.exceptions import ValidationError
 # Create your models here.
 
 from django.db import models
@@ -63,11 +63,18 @@ class SaleItem(models.Model):
     quantity = models.IntegerField(default=1,verbose_name="Quantité")
     unit_price = models.DecimalField(max_digits=12, decimal_places=0,verbose_name="Prix unitaire") # Fixé au moment de la vente
     total_line = models.DecimalField(max_digits=12, decimal_places=0, editable=False,verbose_name="Total ligne")
-
+    ##
     def save(self, *args, **kwargs):
         self.total_line = self.quantity * self.unit_price
         super().save(*args, **kwargs)
-
+    ##
+    def clean(self):
+        # Vérifie si le stock est suffisant
+        if self.product.quantity < self.quantity:
+            raise ValidationError(
+                f"Stock insuffisant pour {self.product.name}. Disponible : {self.product.quantity}"
+            )
+    ##
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
 ###

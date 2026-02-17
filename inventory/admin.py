@@ -38,39 +38,12 @@ class SupplierOrderAdmin(admin.ModelAdmin):
 
     @transaction.atomic
     def save_related(self, request, form, formsets, change):
+        # 1. On enregistre d'abord les lignes en base
         super().save_related(request, form, formsets, change)
         
+        # 2. On appelle le moteur du modèle
         instance = form.instance
-        total = 0
-        
-        # Calcul du montant total automatique
-        for line in instance.lines.all():
-            total += (line.quantity_ordered * line.unit_cost)
-        
-        # Mise à jour du total sans déclencher un save infini
-        SupplierOrder.objects.filter(pk=instance.pk).update(total_amount=total)
-
-        # Logique de mise à jour du stock au statut 'recu'
-        if instance.status == 'recu':
-            for line in instance.lines.all():
-                if line.quantity_received > 0:
-                    prefix = f"RECEP-{instance.order_number}"
-                    
-                    # Sécurité doublon : on vérifie si le mouvement existe déjà
-                    if not StockMovement.objects.filter(reason__icontains=prefix, product=line.product).exists():
-                        # Création du mouvement
-                        StockMovement.objects.create(
-                            product=line.product,
-                            quantity=line.quantity_received,
-                            movement_type='entree',
-                            reason=f"{prefix} - Admin",
-                            user=request.user
-                        )
-
-                        # Mise à jour physique du produit
-                        product = line.product
-                        product.quantity += line.quantity_received
-                        product.save()
+        instance.process_stock_reception(user=request.user)
 
 # 4. Enregistrement des modèles simples (avec sécurité AlreadyRegistered)
 if not admin.site.is_registered(Category):

@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 from django.conf import settings
+from django.db import transaction
 # Create your models here.
 
 class Category(models.Model):
@@ -97,7 +98,44 @@ class SupplierOrder(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,verbose_name="Créé par")
     date_received = models.DateTimeField(null=True, blank=True, verbose_name="Date de réception effective")
     date_cancelled = models.DateTimeField(null=True, blank=True, verbose_name="Date d'annulation")
+    expected_date = models.DateField(
+        null=True, 
+        blank=True, 
+        verbose_name="Date de réception prévue",
+        help_text="Date à laquelle le fournisseur a promis la livraison"
+    )
     #####
+    def process_stock_reception(self, user=None):
+        """
+        Méthode centrale pour valider la réception et mettre à jour le stock.
+        On peut passer l'utilisateur qui fait l'action.
+        """
+        if self.status == 'recu':
+            with transaction.atomic():
+                # Recalcul du total au passage pour être sûr
+                total = sum(line.quantity_ordered * line.unit_cost for line in self.lines.all())
+                SupplierOrder.objects.filter(pk=self.pk).update(total_amount=total)
+
+                # Traitement des lignes
+                for line in self.lines.all():
+                    if line.quantity_received > 0:
+                        prefix = f"RECEP-{self.order_number}"
+                        # On évite les imports circulaires si nécessaire
+                        from .models import StockMovement 
+                        
+                        if not StockMovement.objects.filter(reason__icontains=prefix, product=line.product).exists():
+                            # Création du mouvement
+                            StockMovement.objects.create(
+                                product=line.product,
+                                quantity=line.quantity_received,
+                                movement_type='entree',
+                                reason=f"{prefix} - Auto",
+                                user=user or self.created_by
+                            )
+                            # Mise à jour du produit
+                            product = line.product
+                            product.quantity += line.quantity_received
+                            product.save()
     def save(self, *args, **kwargs):
         # Logique pour capturer les dates lors du changement de statut
         if self.pk:
@@ -126,6 +164,14 @@ class OrderLine(models.Model):
     quantity_ordered = models.IntegerField(verbose_name="Quantité commandée")
     quantity_received = models.IntegerField(default=0, verbose_name="Quantité reçue")
     unit_cost = models.DecimalField(max_digits=12, decimal_places=0,verbose_name="Prix d'achat unitaire")
-
+    ####
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Après avoir sauvegardé la ligne, on demande à la commande de se recalculer
+        order = self.order
+        total = sum(line.quantity_ordered * line.unit_cost for line in order.lines.all())
+        # On utilise update pour éviter de déclencher les signaux en boucle
+        SupplierOrder.objects.filter(pk=order.pk).update(total_amount=total)
+    ####
     def __str__(self):
         return f"{self.product.name} x {self.quantity_ordered}"

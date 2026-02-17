@@ -1,17 +1,23 @@
 from pyexpat.errors import messages
+from django.forms import DecimalField
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
+
+from sales.models import Sale
 from .forms import StockAdjustmentForm
 from .models import Product, Category,Supplier,SupplierOrder
 from .models import StockMovement
-from django.db.models import Sum, Q
+from django.db.models import  F, Count, ExpressionWrapper, DecimalField
+from django.db.models import Q,Sum
 from django.db import transaction
 from xhtml2pdf import pisa
 from django.template.loader import get_template
 from django.utils import timezone
 from datetime import timedelta
+
+from inventory import models
 # Create your views here.
 
 @login_required
@@ -221,7 +227,8 @@ def order_list(request):
     
     return render(request, 'inventory/order_list.html', {
         'orders': orders,
-        'stats': stats
+        'stats': stats,
+        'now': timezone.now() 
     })
 ################
 @login_required
@@ -254,3 +261,69 @@ def receive_order(request, order_id):
     
     messages.success(request, f"La commande {order.order_number} a été intégrée au stock !")
     return redirect('inventory:order-detail', order_id=order.id)
+####
+@login_required
+@transaction.atomic
+def receive_order(request, order_id):
+    order = get_object_or_404(SupplierOrder, id=order_id, status='commande')
+    
+    # On valide que tout ce qui a été commandé est bien reçu 
+    # (ou on peut laisser Laz modifier les quantités reçues avant)
+    for line in order.lines.all():
+        if line.quantity_received > 0:
+            # 1. Mouvement de stock
+            StockMovement.objects.create(
+                product=line.product,
+                quantity=line.quantity_received,
+                movement_type='entree',
+                reason=f"Réception CMD {order.order_number}",
+                user=request.user
+            )
+            # 2. Mise à jour physique
+            line.product.quantity += line.quantity_received
+            line.product.save()
+
+    order.status = 'recu'
+    order.save()
+    
+    messages.success(request, f"Commande {order.order_number} réceptionnée avec succès !")
+    return redirect('inventory:order-list')
+####
+@login_required
+def kibo_analytics(request):
+    today = timezone.now()
+    last_30_days = today - timedelta(days=30)
+
+    # 1. ANALYSE FINANCIÈRE
+    total_sales = Sale.objects.filter(date__gte=last_30_days).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    total_purchases = SupplierOrder.objects.filter(status='recu', date_order__gte=last_30_days).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    # 2. ANALYSE DES STOCKS
+    inventory_value = Product.objects.aggregate(
+        total=Sum(F('quantity') * F('purchase_price'), output_field=DecimalField())
+    )['total'] or 0
+    
+    low_stock_count = Product.objects.filter(quantity__lte=F('min_stock_level')).count()
+
+    # 3. PERFORMANCE FOURNISSEURS
+    orders_delayed = SupplierOrder.objects.filter(
+        status='commande', 
+        expected_date__lt=today.date()
+    ).count()
+
+    # 4. TOP PRODUITS (Basé sur les mouvements de sortie)
+    top_products = Product.objects.annotate(
+        total_sold=Sum('movements__quantity', filter=Q(movements__movement_type='sortie'))
+    ).order_by('-total_sold')[:5]
+
+    context = {
+        'sales_value': total_sales,
+        'purchases_value': total_purchases,
+        'margin': total_sales - total_purchases,
+        'inventory_value': inventory_value,
+        'low_stock_count': low_stock_count,
+        'orders_delayed': orders_delayed,
+        'top_products': top_products,
+        'now': today,
+    }
+    return render(request, 'inventory/analytics.html', context)

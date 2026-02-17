@@ -15,4 +15,5 @@ urlpatterns = [
     #gestion commandes
     path('order/<int:order_id>/receive/', inventory.views.receive_order, name='receive-order'),
     path('orders/', inventory.views.order_list, name='order-list'),
+    path('analytics/', inventory.views.kibo_analytics, name='data-analytics')
 ]
