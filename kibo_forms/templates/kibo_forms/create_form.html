@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Créer un nouveau KIBO Form</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="card p-4 mb-4 bg-light">
+            {{ form.as_p }}
+        </div>
+
+        <h3 class="mt-4">Questions</h3>
+        {{ formset.management_form }}
+        
+        <div id="questions-container">
+            {% for f in formset %}
+                {% include 'kibo_forms/partials/question_form.html' with form=f %}
+            {% endfor %}
+        </div>
+
+        <button type="button" 
+                class="btn btn-info mb-4"
+                hx-get="{% url 'kibo_forms:add_question' %}" 
+                hx-target="#questions-container" 
+                hx-swap="beforeend">
+            + Ajouter une question
+        </button>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-success btn-lg">Enregistrer le formulaire</button>
+        </div>
+    </form>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+<script>
+    // Petit script pour mettre à jour le TOTAL_FORMS du management_form de Django
+    // C'est crucial pour que Django sache combien de questions traiter au POST
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        const formCount = document.querySelectorAll('.question-block').length;
+        document.getElementById('id_questions-TOTAL_FORMS').value = formCount;
+    });
+</script>
+{% endblock %}

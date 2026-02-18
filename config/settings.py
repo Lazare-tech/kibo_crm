@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'leads',
     'inventory',
     'sales',
+    'kibo_forms',
     'django.contrib.humanize',
 ]
 

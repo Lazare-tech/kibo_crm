@@ -1,0 +1,6 @@
+<div class="question-block border p-3 mb-3 shadow-sm bg-white" id="question-{{ forloop.counter0 }}">
+    {{ form.as_p }}
+    <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.question-block').remove()">
+        Supprimer cette question
+    </button>
+</div>

@@ -25,7 +25,8 @@ urlpatterns = [
     path('', include('leads.urls', namespace='leads')),
     path('inventory/', include('inventory.urls', namespace='inventory')),
     path('sales/', include('sales.urls', namespace='sales')),
-
+    path('forms/', include('kibo_forms.urls',namespace='kibo_forms')),
+    ##
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]

@@ -1,0 +1,8 @@
+<h2>{{ form_obj.title }}</h2>
+<p>{{ form_obj.description }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Envoyer ma réponse</button>
+</form>

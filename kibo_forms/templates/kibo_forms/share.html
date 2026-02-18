@@ -1,0 +1,47 @@
+{% extends "base.html" %} {% comment %} On suppose que tu as un base.html {% endcomment %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-success text-white">
+            <h3 class="card-title mb-0">🚀 Formulaire créé avec succès !</h3>
+        </div>
+        <div class="card-body">
+            <p class="lead">Votre formulaire est prêt à être partagé. Voici le lien public :</p>
+            
+            <div class="input-group mb-3">
+                <input type="text" id="shareLink" class="form-control form-control-lg" value="{{ url }}" readonly>
+                <button class="btn btn-outline-primary" type="button" onclick="copyLink()">
+                    <i class="fas fa-copy"></i> Copier le lien
+                </button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>💡 Conseil KIBO :</strong> Envoyez ce lien par WhatsApp, Email ou SMS à vos clients pour collecter leurs réponses.
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'kibo_forms:create_kibo_form' %}" class="btn btn-secondary">Créer un autre formulaire</a>
+                <a href="{% url 'kibo_forms:form_detail' slug=slug %}" class="btn btn-primary" target="_blank">Voir mon formulaire</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyLink() {
+    /* Sélection du texte */
+    var copyText = document.getElementById("shareLink");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /* Pour les mobiles */
+
+    /* Copie dans le presse-papier */
+    navigator.clipboard.writeText(copyText.value);
+
+    /* Feedback visuel */
+    alert("Lien copié dans le presse-papier !");
+}
+</script>
+{% endblock %}
