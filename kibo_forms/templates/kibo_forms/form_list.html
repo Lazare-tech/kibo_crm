@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<section class="bg-light">
+
+<div class="container py-5">
+    <div class="mb-5 text-center">
+        <h1 class="display-5 fw-bold text-primary">Tableau de Bord KIBO</h1>
+        <p class="lead text-muted">Sélectionnez un formulaire pour gérer les données collectées</p>
+    </div>
+
+    <div class="row g-4">
+        {% for form in forms %}
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0 transition-hover">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="bg-primary bg-opacity-10 p-2 rounded">
+                            <i class="bi bi-file-earmark-text text-primary fs-4"></i>
+                        </div>
+                        <span class="badge bg-secondary rounded-pill">
+                            {{ form.submissions.count }} réponse(s)
+                        </span>
+                    </div>
+                    <h5 class="card-title fw-bold">{{ form.title }}</h5>
+                    <p class="card-text text-muted small">
+                        Slug : <code>{{ form.slug }}</code><br>
+                        Responsable : {{ form.nom }} {{ form.prenom }}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-0 pb-3">
+                    <a href="{% url 'kibo_forms:form_dashboard' form.slug %}" class="btn btn-primary w-100">
+                        <i class="bi bi-eye"></i> Voir les données
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="alert alert-info">Aucun formulaire n'a été créé pour le moment.</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .transition-hover:hover {
+        transform: translateY(-5px);
+        transition: transform 0.3s ease;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+</style>
+</section>
+{% endblock content %}

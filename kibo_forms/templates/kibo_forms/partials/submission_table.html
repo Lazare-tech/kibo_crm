@@ -1,0 +1,73 @@
+{% load form_extras %}
+
+<div id="total-count" hx-swap-oob="true">
+    {{ total_found }}
+</div>
+
+<div id="submission-area" class="table-responsive">
+    <table class="table table-hover mb-0">
+        <thead class="table-dark">
+            <tr>
+                <th class="ps-4">Date</th>
+                {% for header in headers %}<th>{{ header }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for sub in page_obj %}
+            <tr>
+                <td class="ps-4 small text-muted">{{ sub.submitted_at|date:"d/m/Y H:i" }}</td>
+                {% for header in headers %}
+                <td>
+                    {% with val=sub.answers_data|dict_key:header %}
+                        {% if "https://drive.google.com" in val|stringformat:"s" %}
+                            <a href="{{ val.0 }}" target="_blank" class="btn btn-sm btn-light border py-0 px-2 text-primary">📄</a>
+                        {% else %}
+                            <span class="cell-truncate" title="{{ val }}">{{ val|truncatechars:40 }}</span>
+                            {% if val|length > 40 %}
+                            <button class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#m{{ sub.id }}{{ forloop.counter }}">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            {% endif %}
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="100" class="text-center py-5 text-muted">Aucun résultat trouvé.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <nav class="d-flex justify-content-between align-items-center p-3 bg-light border-top">
+        <span class="small text-muted">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        <ul class="pagination pagination-sm mb-0">
+            {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" hx-get="?page={{ page_obj.previous_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML" style="cursor:pointer;">Précédent</a></li>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" hx-get="?page={{ page_obj.next_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML" style="cursor:pointer;">Suivant</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% for sub in page_obj %}
+        {% for header in headers %}
+            {% with val=sub.answers_data|dict_key:header %}
+                {% if val|length > 40 %}
+                <div class="modal fade" id="m{{ sub.id }}{{ forloop.parentloop.counter }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-light">
+                                <h6 class="modal-title fw-bold small text-uppercase">{{ header }}</h6>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body p-4" style="white-space: pre-wrap;">{{ val }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endwith %}
+        {% endfor %}
+    {% endfor %}
+</div>

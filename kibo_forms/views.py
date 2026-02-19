@@ -1,72 +1,155 @@
-from django.shortcuts import render
 
-# Create your views here.
-from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpResponse
+import csv
+import openpyxl
 from .models import Form, Submission
-from .forms import DynamicForm
+# Create your views here.
+from django.urls import reverse
+from django.core.paginator import Paginator
+from .models import Form, Submission
+# from .forms import DynamicForm
 from django.shortcuts import render, get_object_or_404, redirect
-from .forms import FormCreationForm, QuestionFormSet
 
-###
-def form_detail(request, slug):
+# from .forms import FormCreationForm, QuestionFormSet
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+# ###
+
+########################################################################################
+@csrf_exempt # Obligatoire car Google n'a pas ton token CSRF
+def google_form_webhook(request, slug):
+    if request.method == 'POST':
+        print(f"BODY REÇU : {request.body}") # <--- AJOUTE ÇA
+        try:
+            # form_obj = Form.objects.get(slug=slug)
+            form_obj = get_object_or_404(Form, slug=slug)
+            data = json.loads(request.body)
+            if '_submitted_at' in data:
+                data['_submitted_at'] = str(data['_submitted_at'])
+            # Stockage direct du dictionnaire envoyé par Google
+            # Submission.objects.create(
+            #     form=form_obj,
+            #     answers_data=data
+            # )
+            submission = Submission(
+                form=form_obj,
+                answers_data=data
+            )
+            submission.save() # Django gérera le created_at tout seul via auto_now_add
+            return JsonResponse({'status': 'success'}, status=201)
+        except Exception as e:
+            print(f"Erreur Webhook: {e}")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'not allowed'}, status=405)
+###############3
+def form_list(request):
+    forms = Form.objects.all().order_by('title')
+    context={
+        "forms": forms
+    }
+    return render(request, 'kibo_forms/form_list.html', context)
+#####
+from django.utils import timezone
+
+def form_dashboard(request, slug):
     form_obj = get_object_or_404(Form, slug=slug)
-    questions = form_obj.questions.all()
+    
+    # 1. RÉCUPÉRATION GLOBALE (Pour l'export et les stats réelles)
+    submissions_queryset = form_obj.submissions.all().order_by('-submitted_at')
+    
+    # Calcul des stats réelles (avant filtrage de recherche)
+    today = timezone.now().date()
+    today_count = submissions_queryset.filter(submitted_at__date=today).count()
 
-    if request.method == 'POST':
-        form = DynamicForm(questions, request.POST)
-        if form.is_valid():
-            # On prépare le dictionnaire JSON pour la base
-            # Ex: {"Votre nom": "Lazare", "Votre âge": 25}
-            answers = {}
-            for q in questions:
-                answers[q.label] = form.cleaned_data.get(f'question_{q.id}')
+    # 2. LOGIQUE D'EXPORTATION (On utilise le QuerySet complet ici)
+    export_format = request.GET.get('export')
+    if export_format in ['csv', 'excel']:
+        return handle_export(export_format, slug, submissions_queryset)
 
-            # Sauvegarde Senior : tout dans une seule ligne !
-            Submission.objects.create(form=form_obj, answers_data=answers)
-            return render(request, 'kibo_forms/thanks.html')
-    else:
-        form = DynamicForm(questions)
+    # 3. LOGIQUE DE RECHERCHE (On crée une copie pour l'affichage)
+    query = request.GET.get('search', '')
+    display_list = submissions_queryset # Par défaut, on affiche tout
+    
+    if query:
+        # Filtrage sur le JSON (Python side)
+        display_list = [
+            s for s in submissions_queryset 
+            if any(query.lower() in str(v).lower() for v in s.answers_data.values())
+        ]
 
-    return render(request, 'kibo_forms/display_form.html', {'form': form, 'form_obj': form_obj})
-#
+    # 4. STATS & PAGINATION SUR LES DONNÉES DE L'ÉCRAN
+    total_found = len(display_list) if isinstance(display_list, list) else display_list.count()
+    paginator = Paginator(display_list, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
 
-def create_kibo_form(request):
-    if request.method == 'POST':
-        form = FormCreationForm(request.POST)
-        if form.is_valid():
-            new_form = form.save(commit=False)
-            new_form.created_by = request.user
-            new_form.save() # Le slug est généré ici automatiquement
+    # 5. HEADERS ACTIFS (Sur les 50 premiers pour la performance)
+    active_headers = []
+    if total_found > 0:
+        first_item = display_list[0] if isinstance(display_list, list) else display_list.first()
+        for key in first_item.answers_data.keys():
+            if not key.startswith('_'):
+                # On vérifie si la colonne a de la donnée dans l'échantillon
+                sample = display_list[:50]
+                if any(s.answers_data.get(key) for s in sample):
+                    active_headers.append(key)
+
+    context = {
+        'form': form_obj,
+        'page_obj': page_obj,
+        'headers': active_headers,
+        'search_query': query,
+        'total_found': total_found,
+        'today_count': today_count, # Ajouté pour tes cartes de stats
+    }
+
+    # 6. RÉPONSE HTMX OU NORMALE
+    if request.headers.get('HX-Request'):
+        return render(request, 'kibo_forms/partials/submission_table.html', context)
+    
+    return render(request, 'kibo_forms/dashboard.html', context)
+##
+import csv
+import openpyxl
+from django.http import HttpResponse
+
+def handle_export(fmt, slug, queryset):
+    """Fonction utilitaire pour gérer l'exportation complète"""
+    if fmt == 'csv':
+        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="export_{slug}.csv"'
+        
+        writer = csv.writer(response)
+        if queryset.exists():
+            # En-têtes basés sur la première soumission
+            headers = ['Date'] + list(queryset.first().answers_data.keys())
+            writer.writerow(headers)
             
-            formset = QuestionFormSet(request.POST, instance=new_form)
-            if formset.is_valid():
-                formset.save()
-                return redirect('kibo_forms:form_share_link', slug=new_form.slug)
-    else:
-        form = FormCreationForm()
-        formset = QuestionFormSet()
+            for sub in queryset:
+                row = [sub.submitted_at.strftime("%d/%m/%Y %H:%M")]
+                row += [sub.answers_data.get(k, "") for k in headers[1:]]
+                writer.writerow(row)
+        return response
 
-    return render(request, 'kibo_forms/create_form.html', {
-        'form': form,
-        'formset': formset
-    })
-def form_share_link(request, slug):
-    # 1. On récupère l'URL complète pour le champ "Copier"
-    full_url = request.build_absolute_uri(
-        reverse('kibo_forms:form_detail', kwargs={'slug': slug})
-    )
-    
-    # 2. On passe 'slug' au contexte pour le bouton "Voir mon formulaire" du template
-    return render(request, 'kibo_forms/share.html', {
-        'url': full_url,
-        'slug': slug  # <--- NE PAS OUBLIER CETTE LIGNE
-    })
-def add_question_field(request):
-    # On récupère le nombre actuel de formulaires pour indexer correctement le nouveau
-    formset = QuestionFormSet()
-    # On prend un formulaire vide (extra)
-    form = formset.forms[0] 
-    
-    # On renvoie juste le fragment HTML du formulaire
-    return render(request, 'kibo_forms/partials/question_form.html', {'form': form})
+    elif fmt == 'excel':
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Réponses KIBO"
+        
+        if queryset.exists():
+            headers = ['Date'] + list(queryset.first().answers_data.keys())
+            ws.append(headers)
+            
+            for sub in queryset:
+                # On retire le fuseau horaire pour la compatibilité Excel
+                row = [sub.submitted_at.replace(tzinfo=None)]
+                row += [str(sub.answers_data.get(k, "")) for k in headers[1:]]
+                ws.append(row)
+        
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="export_{slug}.xlsx"'
+        wb.save(response)
+        return response
