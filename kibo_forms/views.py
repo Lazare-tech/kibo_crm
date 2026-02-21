@@ -16,34 +16,59 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 # ###
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
-########################################################################################
-@csrf_exempt # Obligatoire car Google n'a pas ton token CSRF
-def google_form_webhook(request, slug):
+@csrf_exempt
+def google_form_webhook(request):
     if request.method == 'POST':
-        print(f"BODY REÇU : {request.body}") # <--- AJOUTE ÇA
         try:
-            # form_obj = Form.objects.get(slug=slug)
-            form_obj = get_object_or_404(Form, slug=slug)
             data = json.loads(request.body)
-            if '_submitted_at' in data:
-                data['_submitted_at'] = str(data['_submitted_at'])
-            # Stockage direct du dictionnaire envoyé par Google
-            # Submission.objects.create(
-            #     form=form_obj,
-            #     answers_data=data
-            # )
-            submission = Submission(
+            # On récupère le slug que la bibliothèque a mis dans "_slug"
+            slug = data.get('_slug') 
+            
+            form_obj = get_object_or_404(Form, slug=slug)
+            
+            # On nettoie les données pour ne pas enregistrer le slug dans les réponses
+            answers = {k: v for k, v in data.items() if not k.startswith('_')}
+            
+            # Enregistrement
+            Submission.objects.create(
                 form=form_obj,
-                answers_data=data
+                answers_data=answers
             )
-            submission.save() # Django gérera le created_at tout seul via auto_now_add
             return JsonResponse({'status': 'success'}, status=201)
         except Exception as e:
-            print(f"Erreur Webhook: {e}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    return JsonResponse({'status': 'not allowed'}, status=405)
-###############3
+            return JsonResponse({'error': str(e)}, status=400)
+    return JsonResponse({'status': 'method not allowed'}, status=405)
+########################################################################################
+# @csrf_exempt # Obligatoire car Google n'a pas ton token CSRF
+# def google_form_webhook(request, slug):
+#     if request.method == 'POST':
+#         print(f"BODY REÇU : {request.body}") # <--- AJOUTE ÇA
+#         try:
+#             # form_obj = Form.objects.get(slug=slug)
+#             form_obj = get_object_or_404(Form, slug=slug)
+#             data = json.loads(request.body)
+#             if '_submitted_at' in data:
+#                 data['_submitted_at'] = str(data['_submitted_at'])
+#             # Stockage direct du dictionnaire envoyé par Google
+#             # Submission.objects.create(
+#             #     form=form_obj,
+#             #     answers_data=data
+#             # )
+#             submission = Submission(
+#                 form=form_obj,
+#                 answers_data=data
+#             )
+#             submission.save() # Django gérera le created_at tout seul via auto_now_add
+#             return JsonResponse({'status': 'success'}, status=201)
+#         except Exception as e:
+#             print(f"Erreur Webhook: {e}")
+#             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+#     return JsonResponse({'status': 'not allowed'}, status=405)
+# ###############3
 def form_list(request):
     forms = Form.objects.all().order_by('title')
     context={
