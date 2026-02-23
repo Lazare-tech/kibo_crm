@@ -7,3 +7,37 @@
     animation: beat-flash 1s infinite;
     color: #dc3545;
 }
+/* Style par défaut (Mobile) */
+.container { width: 100%; padding: 10px; }
+
+/* Adaptation pour Tablette et Laptop */
+@media (min-width: 768px) {
+  .container { width: 80%; padding: 20px; display: flex; }
+}
+/* global.css */
+:root {
+    --primary-color: #4e73df;
+    --success-color: #1cc88a;
+    --warning-color: #f6c23e;
+    --danger-color: #e74a3b;
+    --bg-light: #f8f9fc;
+    --border-radius-sm: 10px;
+    --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+}
+
+body {
+    background-color: var(--bg-light);
+    font-family: 'Nunito', sans-serif;
+}
+
+/* Styles communs aux cartes de l'ERP */
+.erp-card {
+    border: 0;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s;
+}
+
+.erp-card:hover {
+    transform: translateY(-5px);
+}

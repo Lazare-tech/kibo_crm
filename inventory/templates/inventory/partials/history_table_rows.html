@@ -1,24 +1,49 @@
 {% for movement in movements %}
-<tr>
-    <td class="ps-4">{{ movement.date|date:"d/m/Y H:i" }}</td>
-    <td><strong>{{ movement.product.name }}</strong></td>
-    <td>
+<tr class="align-middle">
+    <td class="ps-4" data-label="Date">
+        <div class="d-flex flex-column">
+            <span class="small fw-bold text-dark">{{ movement.date|date:"d/m/Y" }}</span>
+            <span class="text-muted" style="font-size: 0.7rem;">{{ movement.date|date:"H:i" }}</span>
+        </div>
+    </td>
+
+    <td data-label="Produit">
+        <div class="fw-bold text-primary small">{{ movement.product.name }}</div>
+    </td>
+
+    <td data-label="Action">
         {% if movement.movement_type == 'entree' %}
-             <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                                <i class="fas fa-arrow-trend-top me-1"></i> Entrée
-                            </span>
+            <span class="badge bg-success-subtle text-success rounded-pill px-3">
+                <i class="fas fa-arrow-up me-1"></i> Entrée
+            </span>
         {% else %}
-             <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
-                                <i class="fas fa-arrow-trend-down me-1"></i> Sortie
-                            </span>
+            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
+                <i class="fas fa-arrow-down me-1"></i> Sortie
+            </span>
         {% endif %}
     </td>
-    <td class="text-center">{{ movement.quantity }}</td>
-    <td>{{ movement.user.username|default:"Système" }}</td>
-    <td>{{ movement.reason }}</td>
+
+    <td class="text-md-center text-end fw-bold h6" data-label="Quantité">
+        <span class="{% if movement.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
+            {% if movement.movement_type == 'entree' %}+{% else %}-{% endif %}{{ movement.quantity }}
+        </span>
+    </td>
+
+    <td data-label="Auteur" class="d-none d-sm-table-cell">
+        <span class="small text-muted"><i class="fas fa-user-circle me-1"></i>{{ movement.user.username|default:"Système" }}</span>
+    </td>
+
+    <td data-label="Note">
+        <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="{{ movement.reason }}">
+            {{ movement.reason|default:"-" }}
+        </small>
+    </td>
 </tr>
 {% empty %}
 <tr>
-    <td colspan="6" class="text-center py-4 text-muted">Aucun mouvement trouvé.</td>
+    <td colspan="6" class="text-center py-5 text-muted small italic">
+        <i class="fas fa-history fa-2x mb-3 opacity-25"></i><br>
+        Aucun mouvement enregistré.
+    </td>
 </tr>
 {% endfor %}

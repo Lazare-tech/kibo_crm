@@ -1,9 +1,14 @@
+{% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/apps/leads.css' %}">
+{% endblock extra_css %}
+
 {% for lead in leads %}
 <tr id="lead-{{ lead.pk }}">
-    <td class="ps-4">
+    <td class="ps-4" data-label="Prospect">
         <div class="d-flex align-items-center">
             <div class="avatar-sm me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                 style="width:38px; height:38px; font-weight: 600; font-size: 0.8rem;">
+                 style="width:34px; height:34px; font-weight: 600; font-size: 0.75rem; flex-shrink: 0;">
                 {{ lead.first_name|first|upper }}{{ lead.last_name|first|upper }}
             </div>
             <div>
@@ -12,12 +17,16 @@
                         {{ lead.first_name }} {{ lead.last_name }}
                     </a>
                 </div>
-                <div class="text-muted small">Créé le {{ lead.date_added|date:"d/m/Y" }}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">Depuis le {{ lead.date_added|date:"d/m/y" }}</div>
             </div>
         </div>
     </td>
-    <td class="text-muted">{{ lead.email }}</td>
-    <td>
+
+    <td class="text-muted small" data-label="Contact">
+        {{ lead.email|default:"Non renseigné" }}
+    </td>
+
+    <td data-label="Statut">
         <span class="badge rounded-pill 
             {% if lead.status == 'gagne' %}bg-success-subtle text-success
             {% elif lead.status == 'perdu' %}bg-danger-subtle text-danger
@@ -25,25 +34,27 @@
             {{ lead.get_status_display }}
         </span>
     </td>
-    <td>
+
+    <td data-label="Source">
         <small class="text-muted"><i class="fas fa-bullhorn me-1"></i> {{ lead.get_source_display }}</small>
     </td>
-    <td class="text-end pe-4">
-        <div class="btn-group">
-            <a href="{% url 'leads:lead-detail' lead.pk %}" class="btn btn-sm btn-light border" title="Voir les détails">
+
+    <td class="text-end pe-4" data-label="Actions">
+        <div class="btn-group shadow-sm">
+            <a href="{% url 'leads:lead-detail' lead.pk %}" class="btn btn-sm btn-light border" title="Voir">
                 <i class="fas fa-eye text-info"></i>
             </a>
             <a href="{% url 'leads:lead-update' lead.pk %}" class="btn btn-sm btn-light border" title="Modifier">
                 <i class="fas fa-pen text-primary"></i>
             </a>
-            <button class="btn btn-sm btn-light border text-danger" 
-                    data-bs-toggle="modal" 
-                    data-bs-target="#deleteModal"
-                    onclick="prepareDelete('{{ lead.pk }}', '{{ lead.first_name }}')">
+            <button class="btn btn-sm btn-light border text-danger" onclick="prepareDelete('{{ lead.pk }}', '{{ lead.first_name }}')" title="Supprimer">
                 <i class="fas fa-trash-alt"></i>
             </button>
         </div>
     </td>
 </tr>
 {% empty %}
+    <tr>
+        <td colspan="5" class="text-center py-5 text-muted">Aucun prospect dans la base.</td>
+    </tr>
 {% endfor %}

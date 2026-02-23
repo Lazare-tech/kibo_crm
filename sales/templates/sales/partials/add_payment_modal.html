@@ -1,41 +1,46 @@
-<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" id="paymentModal">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold">Enregistrer un versement</h5>
-                <button type="button" class="btn-close btn-close-white" onclick="document.getElementById('modal-container').innerHTML=''"></button>
+<div class="modal fade show" style="display: block; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);" id="paymentModal">
+    <div class="modal-dialog modal-dialog-centered mx-2 mx-sm-auto"> <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title fw-bold text-dark"><i class="fas fa-hand-holding-usd me-2 text-primary"></i>Versement</h6>
+                <button type="button" class="btn-close small" onclick="document.getElementById('modal-container').innerHTML=''"></button>
             </div>
+            
             <form hx-post="{% url 'sales:add-payment' sale.id %}" hx-target="#modal-container">
                 {% csrf_token %}
-                <div class="modal-body p-4">
-                    <div class="text-center mb-4 bg-light p-3 rounded">
-                        <small class="text-muted text-uppercase d-block">Reste à payer ({{ sale.sale_number }})</small>
-                        <h2 class="fw-bold text-danger mb-0">{{ sale.balance_due|floatformat:0 }} F</h2>
+                <div class="modal-body">
+                    <div class="text-center mb-3 bg-danger-subtle p-2 rounded-3">
+                        <small class="text-danger fw-bold text-uppercase" style="font-size: 0.6rem; letter-spacing: 1px;">Reste dû ({{ sale.sale_number }})</small>
+                        <h3 class="fw-bold text-danger mb-0">{{ sale.balance_due|floatformat:0 }} <small style="font-size: 0.8rem;">F</small></h3>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase">Montant versé</label>
-                        <div class="input-group">
-                            <input type="number" name="amount" class="form-control form-control-lg fw-bold text-primary" 
-                                   max="{{ sale.balance_due }}" min="1" placeholder="Ex: 5000" required autofocus>
-                            <span class="input-group-text bg-white fw-bold">F CFA</span>
+                        <label class="form-label mb-1 fw-bold text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Montant à encaisser</label>
+                        <div class="input-group shadow-sm rounded-3 overflow-hidden">
+                            <input type="number" name="amount" class="form-control form-control-lg border-0 bg-light fw-bold text-primary" 
+                                   max="{{ sale.balance_due }}" min="1" placeholder="Entrez le montant" required autofocus>
+                            <span class="input-group-text border-0 bg-light fw-bold text-muted" style="font-size: 0.8rem;">FCFA</span>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-uppercase">Moyen de paiement</label>
-                        <select name="payment_method" class="form-select">
-                            <option value="cash">💵 Espèces</option>
+                    <div class="mb-2">
+                        <label class="form-label mb-1 fw-bold text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Mode de paiement</label>
+                        <select name="payment_method" class="form-select form-select-sm border-0 bg-light fw-bold text-dark shadow-sm">
+                            <option value="cash">💵 Espèces (Cash)</option>
                             <option value="orange_money">📱 Orange Money</option>
                             <option value="moov_money">📱 Moov Money</option>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer border-0 p-3">
-                    <button type="button" class="btn btn-light rounded-pill px-4" onclick="document.getElementById('modal-container').innerHTML=''">Annuler</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
-                        CONFIRMER LE VERSEMENT
-                    </button>
+
+                <div class="modal-footer border-0 pt-0 pb-4 px-3">
+                    <div class="d-grid gap-2 w-100">
+                        <button type="submit" class="btn btn-primary rounded-pill fw-bold shadow-sm btn-payment-main py-2">
+                            CONFIRMER LE VERSEMENT
+                        </button>
+                        <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none" onclick="document.getElementById('modal-container').innerHTML=''">
+                            Annuler
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

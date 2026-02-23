@@ -13,7 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 
-
+{% block extra_css %}
+{% endblock %}
     
     <style>
         :root { --sidebar-width: 260px; --primary-color: #4361ee; --bg-light: #f8f9fa; }
@@ -47,8 +48,7 @@
     </style>
 </head>
 <body>
-
-    {% if messages %}
+{% if messages %}
 
     <div class="messages-container">
 
@@ -159,7 +159,7 @@
                     <i class="fas fa-calendar-alt text-primary me-2"></i>{{ now|date:"d M Y" }}
                 </span>
             </div>
-        </header>
+        </header>  
 
         {% block content %}
         {% endblock content %}

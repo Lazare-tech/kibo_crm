@@ -1,110 +1,129 @@
 {% extends 'base.html' %}
-
+{% load humanize %}
+{% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/apps/sale.css' %}">
+{% endblock extra_css %}
 {% block content %}
 <form method="POST" action="{% url 'sales:validate-sale' %}" id="pos-form">
     {% csrf_token %}
-<div class="row g-4">
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm p-3 mb-4">
-            <div class="input-group rounded-pill bg-light overflow-hidden border-0">
-                <span class="input-group-text border-0 bg-light"><i class="fas fa-search text-muted"></i></span>
-                <input type="text" class="form-control border-0 bg-light" placeholder="Scanner ou rechercher un produit...">
-            </div>
-        </div>
 
-        <div class="row g-3" id="pos-product-grid">
-            {% for product in products %}
-            <div class="col-md-4">
-                <div class="card h-100 border-0 shadow-sm hover-primary transition text-center p-3" 
-                     hx-get="{% url 'sales:add-to-cart' product.id %}" 
-                     hx-target="#cart-items" 
-                     hx-swap="beforeend"
-                     hx-on::after-request="htmx.trigger('#cart-items', 'calculate')"
-                     style="cursor: pointer;">
-                    <div class="fw-bold text-dark small">{{ product.name }}</div>
-                    <div class="text-primary fw-bold mt-2">{{ product.selling_price }} F</div>
-                    <div class="text-muted" style="font-size: 0.6rem;">Dispo: {{ product.quantity }}</div>
-                </div>
-            </div>
-            {% endfor %}
+    <div class="pos-mobile-nav d-none">
+        <div class="pos-nav-item active" onclick="switchPosTab('products', this)">
+            <i class="fas fa-th-large d-block mb-1"></i> PRODUITS
+        </div>
+        <div class="pos-nav-item" onclick="switchPosTab('cart', this)">
+            <i class="fas fa-shopping-basket d-block mb-1"></i> PANIER 
+            <span class="badge bg-danger rounded-pill" id="cart-count">0</span>
         </div>
     </div>
 
-    <div class="col-lg-5">
-        <div class="card border-0 shadow-sm h-100 d-flex flex-column">
-            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold"><i class="fas fa-shopping-cart me-2"></i> Panier</h6>
-            </div>
-            
-            <div class="card-body flex-grow-1 overflow-auto" style="max-height: 400px;">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr class="text-muted small">
-                            <th>Article</th>
-                            <th>Qté</th>
-                            <th class="text-end">Total</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cart-items" 
-                           hx-get="{% url 'sales:calculate-totals' %}" 
-                           hx-trigger="calculate, change from:.item-qty, keyup from:#amount-received delay:200ms"
-                           hx-include="#pos-form"
-                           hx-target="#null-target">
-                    </tbody>
-                </table>
+    <div class="row g-3 g-lg-4 mb-5">
+        <div class="col-lg-7 pos-section active" id="section-products">
+            <div class="card border-0 shadow-sm p-3 mb-3">
+                <div class="input-group rounded-pill bg-light overflow-hidden border-0">
+                    <span class="input-group-text border-0 bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-0 bg-light small" placeholder="Rechercher...">
+                </div>
             </div>
 
-            <div class="card-footer bg-light p-4">
-                    <div class="mb-3">
-    <label class="small fw-bold text-muted text-uppercase d-flex justify-content-between">
-        Client 
-        <a href="javascript:void(0)" 
-           hx-get="{% url 'leads:quick-create-client' %}" 
-           hx-target="#modal-container"
-           class="text-primary text-decoration-none">
-           <i class="fas fa-plus-circle"></i> Nouveau
-        </a>
-    </label>
-    <select name="client_id" id="client-select" class="form-select form-select-sm border-0 shadow-sm" required>
-        <option value="">-- Choisir un client --</option>
-        {% for client in clients %}
-            <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
-        {% endfor %}
-    </select>
-</div>
-
-                <hr class="my-3 opacity-10">
-
-                <div class="row g-2 mb-3">
-                    <div class="col-12">
-                        <label class="small fw-bold text-success text-uppercase">Montant Reçu</label>
-                        <input type="number" name="amount_paid" id="amount-received" 
-                               class="form-control form-control-lg fw-bold text-success border-success-subtle" 
-                               placeholder="0">
+            <div class="row g-2 g-md-3" id="pos-product-grid">
+                {% for product in products %}
+                <div class="col-6 col-md-4"> <div class="card h-100 border-0 shadow-sm hover-primary transition text-center p-2" 
+                         hx-get="{% url 'sales:add-to-cart' product.id %}" 
+                         hx-target="#cart-items" 
+                         hx-swap="beforeend"
+                         hx-on::after-request="htmx.trigger('#cart-items', 'calculate')"
+                         style="cursor: pointer;">
+                        <div class="fw-bold text-dark" style="font-size: 0.75rem;">{{ product.name }}</div>
+                        <div class="text-primary fw-bold mt-1 small">{{ product.selling_price|intcomma }} F</div>
+                        <div class="text-muted" style="font-size: 0.6rem;">Stock: {{ product.quantity }}</div>
                     </div>
-                   
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-5 pos-section" id="section-cart">
+            <div class="card border-0 shadow-sm h-100 d-flex flex-column sticky-lg-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 fw-bold small"><i class="fas fa-shopping-cart me-2"></i> Panier Actuel</h6>
+                    <button type="button" class="btn btn-sm btn-outline-light border-0 d-lg-none" onclick="switchPosTab('products')">
+                        <i class="fas fa-plus me-1"></i> Ajouter
+                    </button>
+                </div>
+                
+                <div class="card-body flex-grow-1 cart-scroll p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr class="text-muted" style="font-size: 0.65rem;">
+                                <th class="ps-3">Article</th>
+                                <th>Qté</th>
+                                <th class="text-end pe-3">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items" 
+                               hx-get="{% url 'sales:calculate-totals' %}" 
+                               hx-trigger="calculate, change from:.item-qty, keyup from:#amount-received delay:200ms"
+                               hx-include="#pos-form"
+                               hx-target="#null-target"
+                               style="font-size: 0.8rem;">
+                        </tbody>
+                    </table>
                 </div>
 
-                <button type="button" 
-                        class="btn btn-primary w-100 py-2 rounded-pill fw-bold shadow-sm mt-2"
-                        hx-post="{% url 'sales:preview-sale' %}" 
-                        hx-include="#pos-form"
-                        hx-target="#modal-container">
-                    <i class="fas fa-eye me-2"></i> APERÇU DE LA VENTE
-                </button>
+                <div class="card-footer bg-white p-3 p-md-4">
+                    <div class="mb-3 bg-light p-2 rounded-3">
+                        <label class="small fw-bold text-muted text-uppercase d-flex justify-content-between mb-1" style="font-size: 0.6rem;">
+                            Client 
+                            <a href="javascript:void(0)" hx-get="{% url 'leads:quick-create-client' %}" hx-target="#modal-container" class="text-primary">
+                               + Nouveau
+                            </a>
+                        </label>
+                        <select name="client_id" class="form-select form-select-sm border-0 bg-transparent fw-bold" required>
+                            <option value="">-- Client Divers --</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <label class="small fw-bold text-success text-uppercase" style="font-size: 0.6rem;">Encaissement</label>
+                            <input type="number" name="amount_paid" id="amount-received" 
+                                   class="form-control form-control-lg fw-bold text-success bg-success-subtle border-0" 
+                                   placeholder="Montant reçu...">
+                        </div>
+                    </div>
+
+                    <button type="button" 
+                            class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow"
+                            hx-post="{% url 'sales:preview-sale' %}" 
+                            hx-include="#pos-form"
+                            hx-target="#modal-container">
+                        VALIDER LA VENTE
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 </form>
 
 <div id="modal-container"></div>
-
 <div id="null-target" style="display:none;"></div>
 
-<style>
-    .hover-primary:hover { border: 1px solid var(--primary-color) !important; background: #f0f3ff; transition: 0.3s; }
-    .card { border-radius: 15px; }
-</style>
+<script>
+    function switchPosTab(tab, element) {
+        // Gestion des sections
+        document.querySelectorAll('.pos-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section-' + tab).classList.add('active');
+        
+        // Gestion du menu mobile
+        if(element) {
+            document.querySelectorAll('.pos-nav-item').forEach(i => i.classList.remove('active'));
+            element.classList.add('active');
+        }
+    }
+</script>
 {% endblock %}

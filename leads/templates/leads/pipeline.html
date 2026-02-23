@@ -1,61 +1,76 @@
 {% extends 'base.html' %}
 {% load humanize %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="fw-bold m-0">Pipeline des Ventes</h4>
-    <div class="text-muted small">Valeur totale : <strong>{{ total_pipeline_value|intcomma }} FCFA</strong></div>
-</div>
-
-<div class="row g-3 overflow-auto flex-nowrap pb-4" style="min-height: 80vh;">
-    {% for stage in pipeline %}
-    <div class="col-md-3" style="min-width: 300px;">
-        <div class="bg-light rounded-3 p-3 h-100 shadow-sm border-top border-4 
-            {% if stage.code == 'gagne' %}border-success{% elif stage.code == 'perdu' %}border-danger{% else %}border-primary{% endif %}">
-            
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="fw-bold mb-0 text-uppercase small">{{ stage.name }}</h6>
-                <span class="badge bg-white text-dark border">{{ stage.deals.count }}</span>
-            </div>
-            
-            <div class="mb-3 small text-muted fw-bold">{{ stage.total|intcomma }} FCFA</div>
-
-            <div class="deal-list">
-                {% for deal in stage.deals %}
-               <div class="card border-0 shadow-sm mb-3 p-3" id="deal-{{ deal.pk }}">
-    <div class="d-flex justify-content-between align-items-start mb-2">
-        <div class="small fw-bold text-primary">{{ deal.lead.first_name }} {{ deal.lead.last_name }}</div>
-        
-        <div class="dropdown">
-            <select class="form-select form-select-sm border-0 bg-light" 
-                    style="font-size: 0.65rem; width: auto;"
-                    name="stage"
-                    hx-post="{% url 'leads:update-deal-stage' deal.pk %}"
-                    hx-target="body" 
-                    hx-push-url="false">
-                {% for stage_code, stage_name in deal.STAGES %}
-                    <option value="{{ stage_code }}" {% if deal.stage == stage_code %}selected{% endif %}>
-                        {{ stage_name }}
-                    </option>
-                {% endfor %}
-            </select>
+<div class="container-fluid px-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-2">
+        <h4 class="fw-bold m-0"><i class="fas fa-columns me-2 text-primary"></i>Pipeline des Ventes</h4>
+        <div class="badge bg-white shadow-sm text-dark border p-2">
+            Valeur totale : <span class="text-success fw-bold">{{ total_pipeline_value|intcomma }} FCFA</span>
         </div>
     </div>
-    
-    <div class="fw-bold mb-2" style="font-size: 0.9rem;">{{ deal.name }}</div>
-    
-    <div class="d-flex justify-content-between align-items-center mt-2">
-        <span class="badge bg-light text-dark border-0" style="font-size: 0.75rem;">
-            {{ deal.amount|intcomma }} FCFA
-        </span>
-        <a href="{% url 'leads:lead-detail' deal.lead.pk %}" class="text-muted">
-            <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i>
-        </a>
-    </div>
-</div>
-                {% endfor %}
+
+    <div class="pipeline-container flex-nowrap pb-4" style="min-height: 80vh;">
+        {% for stage in pipeline %}
+        <div class="pipeline-column" style="min-width: 320px;">
+            <div class="bg-light rounded-3 p-3 h-100 shadow-sm border-top border-4 
+                {% if stage.code == 'gagne' %}border-success{% elif stage.code == 'perdu' %}border-danger{% else %}border-primary{% endif %}">
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0 text-uppercase small">{{ stage.name }}</h6>
+                    <span class="badge bg-white text-dark border-secondary-subtle">{{ stage.deals.count }}</span>
+                </div>
+                
+                <div class="mb-3 small text-muted fw-bold border-bottom pb-2">
+                    {{ stage.total|intcomma }} <span style="font-size: 0.6rem;">FCFA</span>
+                </div>
+
+                <div class="deal-list">
+                    {% for deal in stage.deals %}
+                    <div class="card border-0 shadow-sm mb-3 p-3 hover-lift" id="deal-{{ deal.pk }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="small fw-bold text-primary text-truncate" style="max-width: 70%;">
+                                {{ deal.lead.first_name }} {{ deal.lead.last_name }}
+                            </div>
+                            
+                            <div class="dropdown">
+                                <select class="form-select form-select-sm border-0 bg-light-subtle text-muted" 
+                                        style="font-size: 0.65rem; width: auto; cursor: pointer;"
+                                        name="stage"
+                                        hx-post="{% url 'leads:update-deal-stage' deal.pk %}"
+                                        hx-target="body">
+                                    {% for stage_code, stage_name in deal.STAGES %}
+                                        <option value="{{ stage_code }}" {% if deal.stage == stage_code %}selected{% endif %}>
+                                            {{ stage_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="fw-bold mb-2" style="font-size: 0.85rem; line-height: 1.2;">{{ deal.name }}</div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-2 border-top pt-2">
+                            <span class="fw-bold text-dark" style="font-size: 0.8rem;">
+                                {{ deal.amount|intcomma }} <small>FCFA</small>
+                            </span>
+                            <a href="{% url 'leads:lead-detail' deal.lead.pk %}" class="btn btn-sm btn-link p-0 text-muted">
+                                <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
+
+<style>
+    /* Effet au survol des cartes */
+    .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
+    .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1) !important; }
+    .bg-light-subtle { background-color: #f1f3f5; }
+</style>
 {% endblock content %}

@@ -1,114 +1,134 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/apps/sale.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold text-dark">Détails de la Vente : {{ sale.sale_number }}</h3>
-    <div>
-        <a href="{% url 'sales:generate-invoice' sale.id %}" class="btn btn-danger rounded-pill px-4 shadow-sm" target="_blank">
-            <i class="fas fa-file-pdf me-2"></i> Imprimer la Facture
-        </a>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">Informations Client</h5>
-                <div class="d-flex align-items-center bg-light p-3 rounded">
-                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold">{{ sale.client.first_name }} {{ sale.client.last_name }}</h6>
-                        <small class="text-muted">{{ sale.client.phone }} | {{ sale.client.email }}</small>
-                    </div>
-                </div>
-            </div>
+<div class="container-fluid px-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-0 h5">Facture {{ sale.sale_number }}</h4>
+            <small class="text-muted">Émise le {{ sale.date|date:"d M Y à H:i" }}</small>
         </div>
-
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">Articles commandés</h5>
-                <table class="table align-middle">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Désignation</th>
-                            <th class="text-center">Qté</th>
-                            <th class="text-end">Prix Unitaire</th>
-                            <th class="text-end">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in sale.items.all %}
-                        <tr>
-                            <td>{{ item.product.name }}</td>
-                            <td class="text-center">{{ item.quantity }}</td>
-                            <td class="text-end">{{ item.unit_price|intcomma }} F</td>
-                            <td class="text-end fw-bold">{{ item.total_line|intcomma }} F</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                        <tfoot>
-    
-</tfoot>
-                </table>
-            </div>
+        <div class="d-flex gap-2 w-100 w-md-auto">
+            <a href="{% url 'sales:generate-invoice' sale.id %}" class="btn btn-danger rounded-pill px-4 shadow-sm flex-grow-1" target="_blank">
+                <i class="fas fa-file-pdf me-2"></i> <span class="small">Imprimer</span>
+            </a>
         </div>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">Résumé Financier</h5>
-                <div class="mb-3">
-                    <small class="text-muted d-block">Statut :</small>
-                    {% if sale.status == 'paye' %}
-                        <span class="badge bg-success rounded-pill px-3">Payé</span>
-                    {% elif sale.status == 'partiel' %}
-                        <span class="badge bg-warning text-dark rounded-pill px-3">Paiement Partiel</span>
-                    {% else %}
-                        <span class="badge bg-danger rounded-pill px-3">Impayé</span>
-                    {% endif %}
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span>Total payé :</span>
-                    <span class="text-success fw-bold">{{ sale.amount_paid|intcomma }} F</span>
-                </div>
-                <div class="d-flex justify-content-between mb-3">
-                    <span>Reste à payer :</span>
-                    <span class="text-danger fw-bold h5">{{ sale.balance_due|intcomma }} F</span>
-                </div>
-                
-                {% if sale.balance_due > 0 %}
-                <button class="btn btn-primary w-100 rounded-pill" 
-                        hx-get="{% url 'sales:add-payment' sale.id %}" 
-                        hx-target="#modal-container">
-                    Enregistrer un versement
-                </button>
-                {% endif %}
-            </div>
-        </div>
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4 border-top border-primary border-4">
+                <div class="card-body">
+                    <h6 class="fw-bold mb-3 text-uppercase small text-muted">Résumé Financier</h6>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small">Statut du paiement :</span>
+                        {% if sale.balance_due == 0 %}
+                            <span class="badge bg-success-subtle text-success border-0 px-3">PAYÉ</span>
+                        {% else %}
+                            <span class="badge bg-danger-subtle text-danger border-0 px-3">IMPAYÉ</span>
+                        {% endif %}
+                    </div>
 
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h6 class="fw-bold mb-0">Historique des règlements</h6>
-            </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    {% for payment in payments %}
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold">{{ payment.amount|intcomma }} F</span>
-                            <small class="text-muted">{{ payment.date_payment|date:"d M Y" }}</small>
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="small">Total encaissé :</span>
+                            <span class="text-success fw-bold">{{ sale.amount_paid|intcomma }} F</span>
                         </div>
-                        <small class="text-muted">Via {{ payment.get_payment_method_display }}</small>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item text-center text-muted">Aucun versement enregistré.</li>
-                    {% endfor %}
-                </ul>
+                        <div class="d-flex justify-content-between border-top pt-2">
+                            <span class="fw-bold">Reste à payer :</span>
+                            <span class="text-danger fw-bold h5 mb-0">{{ sale.balance_due|intcomma }} F</span>
+                        </div>
+                    </div>
+                    {% if sale.balance_due > 0 %}
+<button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm btn-payment-main" 
+        hx-get="{% url 'sales:add-payment' sale.id %}" 
+        hx-target="#modal-container">
+    <i class="fas fa-hand-holding-usd"></i> ENREGISTRER VERSEMENT
+</button>
+{% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h6 class="fw-bold mb-0 small text-uppercase text-muted">Historique des règlements</h6>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for payment in payments %}
+                        <li class="list-group-item bg-transparent py-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark" style="font-size: 0.85rem;">+ {{ payment.amount|intcomma }} F</span>
+                                <small class="badge bg-light text-muted border-0 fw-normal">{{ payment.date_payment|date:"d/m/y" }}</small>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">Mode : {{ payment.get_payment_method_display }}</small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-center text-muted small py-4 italic">Aucun versement reçu.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-3 text-uppercase small text-muted">Informations Client</h6>
+                    <div class="d-flex align-items-center bg-light p-3 rounded-3">
+                        <div class="avatar bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px;">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark" style="font-size: 0.9rem;">{{ sale.client.first_name }} {{ sale.client.last_name }}</h6>
+                            <div class="small text-muted">{{ sale.client.phone|default:"Pas de téléphone" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom">
+                        <h6 class="fw-bold mb-0 text-uppercase small text-muted">Détails de la commande</h6>
+                    </div>
+                    <div class="table-responsive-mobile">
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-light d-none d-md-table-header-group">
+                                <tr class="small text-uppercase text-muted">
+                                    <th class="ps-4">Désignation</th>
+                                    <th class="text-center">Qté</th>
+                                    <th class="text-end">Prix Unitaire</th>
+                                    <th class="text-end pe-4">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in sale.items.all %}
+                                <tr>
+                                    <td class="ps-4" data-label="Article">
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ item.product.name }}</div>
+                                    </td>
+                                    <td class="text-md-center text-end" data-label="Quantité">
+                                        <span class="badge bg-light text-dark border">{{ item.quantity }}</span>
+                                    </td>
+                                    <td class="text-md-end text-end" data-label="Prix Unitaire">
+                                        <span class="small text-muted">{{ item.unit_price|intcomma }} F</span>
+                                    </td>
+                                    <td class="text-md-end text-end pe-md-4 fw-bold text-primary" data-label="Sous-total">
+                                        {{ item.total_line|intcomma }} F
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

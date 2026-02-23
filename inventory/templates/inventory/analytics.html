@@ -1,78 +1,111 @@
 {% extends 'base.html' %}
 {% load humanize %}
-
+{% load static %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/apps/inventory.css' %}">
+{% endblock extra_css %}
 {% block content %}
 <div class="mb-4">
     <h4 class="fw-bold"><i class="fas fa-chart-line text-primary me-2"></i>Analyse Stratégique</h4>
     <p class="text-muted small">Analyse des 30 derniers jours au {{ now|date:"d M Y H:i" }}</p>
 </div>
-
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Ventes (30j)</small>
-            <h4 class="fw-bold text-primary mb-0">{{ sales_value|intcomma }} F</h4>
-            <div class="progress mt-2" style="height: 4px;"><div class="progress-bar" style="width: 70%"></div></div>
+            <small class="text-muted fw-bold text-uppercase">Ventes (30j)</small>
+            <h4 class="fw-bold text-primary mb-0">{{ sales_value|intcomma }} <small style="font-size: 0.6em;">F</small></h4>
+            <div class="progress mt-2"><div class="progress-bar" style="width: 70%"></div></div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Valeur Stock</small>
-            <h4 class="fw-bold text-dark mb-0">{{ inventory_value|intcomma }} F</h4>
-            <small class="text-success mt-1"><i class="fas fa-warehouse me-1"></i>Capital dormant</small>
+            <small class="text-muted fw-bold text-uppercase">Valeur Stock</small>
+            <h4 class="fw-bold text-dark mb-0">{{ inventory_value|intcomma }} <small style="font-size: 0.6em;">F</small></h4>
+            <small class="text-success mt-1"><i class="fas fa-warehouse me-1"></i>Capital</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Alertes Stock</small>
+            <small class="text-muted fw-bold text-uppercase">Alertes Stock</small>
             <h4 class="fw-bold {% if low_stock_count > 0 %}text-danger{% else %}text-success{% endif %} mb-0">{{ low_stock_count }}</h4>
-            <small class="text-muted">Produits à commander</small>
+            <small class="text-muted">À commander</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card border-0 shadow-sm p-3">
-            <small class="text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Retards Fournisseurs</small>
+            <small class="text-muted fw-bold text-uppercase">Retards</small>
             <h4 class="fw-bold text-warning mb-0">{{ orders_delayed }}</h4>
-            <small class="text-muted">Commandes hors délai</small>
+            <small class="text-muted">Hors délai</small>
         </div>
     </div>
 </div>
 
 <div class="row g-3">
     <div class="col-md-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-0 py-3">
-                <h6 class="fw-bold mb-0">Top 5 - Rotation des Produits</h6>
+      <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3">
+        <h6 class="fw-bold mb-0 small text-uppercase text-muted">Top 5 - Rotation des Produits</h6>
+    </div>
+    
+    <div class="card-body p-2 p-md-0">
+        <div class="d-block d-md-none">
+            {% for product in top_products %}
+            <div class="rotation-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ product.name }}</div>
+                    {% if product.is_low_stock %}
+                        <span class="badge bg-danger-subtle text-danger rounded-pill" style="font-size: 0.6rem;">CRITIQUE</span>
+                    {% else %}
+                        <span class="badge bg-success-subtle text-success rounded-pill" style="font-size: 0.6rem;">STOCK OK</span>
+                    {% endif %}
+                </div>
+
+                <div class="rotation-badge-group">
+                    <div class="rotation-data">
+                        <i class="fas fa-shopping-cart text-primary"></i> 
+                        <span class="fw-bold text-primary">{{ product.total_sold|default:0 }}</span> vendus
+                    </div>
+                    <div class="rotation-data border-start ps-2">
+                        <i class="fas fa-boxes text-muted"></i> 
+                        <span class="fw-bold text-dark">{{ product.quantity }}</span> en stock
+                    </div>
+                </div>
             </div>
-            <div class="card-body p-0">
-                <table class="table align-middle mb-0">
-                    <thead class="bg-light small">
-                        <tr>
-                            <th class="ps-4">Produit</th>
-                            <th>Vendus</th>
-                            <th>Stock Restant</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in top_products %}
-                        <tr>
-                            <td class="ps-4 fw-bold">{{ product.name }}</td>
-                            <td><span class="badge bg-primary-subtle text-primary">{{ product.total_sold|default:0 }}</span></td>
-                            <td>{{ product.quantity }}</td>
-                            <td>
-                                {% if product.is_low_stock %}
-                                    <span class="text-danger small"><i class="fas fa-arrow-down"></i> Critique</span>
-                                {% else %}
-                                    <span class="text-success small"><i class="fas fa-check"></i> OK</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            {% endfor %}
         </div>
+
+        <div class="table-responsive d-none d-md-block">
+            <table class="table align-middle mb-0">
+                <thead class="bg-light small text-muted">
+                    <tr>
+                        <th class="ps-4">Produit</th>
+                        <th class="text-center">Vendus</th>
+                        <th class="text-center">Stock Restant</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in top_products %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-dark">{{ product.name }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-primary-subtle text-primary px-3">{{ product.total_sold|default:0 }}</span>
+                        </td>
+                        <td class="text-center fw-bold">{{ product.quantity }}</td>
+                        <td>
+                            {% if product.is_low_stock %}
+                                <span class="badge bg-danger-subtle text-danger border-0">A commander</span>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border-0">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
     </div>
 
     <div class="col-md-4">

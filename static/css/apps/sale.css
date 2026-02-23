@@ -1,0 +1,132 @@
+/* --- CONFIGURATION GLOBALE --- */
+:root {
+    --primary-color: #4361ee;
+}
+
+.cart-scroll {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* --- OPTIMISATIONS MOBILE (< 992px) --- */
+@media (max-width: 991.98px) {
+    /* 1. Interface POS (Caisse) */
+    .pos-section { display: none; }
+    .pos-section.active { display: block; }
+    
+    /* Diminution du bouton principal de versement */
+    .btn-payment-main {
+        padding: 0.5rem 1rem !important; /* Moins haut */
+        font-size: 0.75rem !important;   /* Texte plus compact */
+        letter-spacing: 0.5px;
+    }
+
+    .btn-payment-main i {
+        font-size: 0.7rem !important;
+        margin-right: 5px !important;
+    }
+    .pos-mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: white;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        z-index: 1060;
+    }
+
+    .pos-nav-item {
+        flex: 1; padding: 12px; text-align: center;
+        font-weight: 700; font-size: 0.8rem; color: #6c757d;
+        border-top: 3px solid transparent;
+    }
+
+    .pos-nav-item.active {
+        color: var(--primary-color);
+        border-top-color: var(--primary-color);
+        background: #f8f9ff;
+    }
+
+    #pos-product-grid .col-6 { padding: 5px; }
+    #pos-product-grid .card { padding: 10px !important; }
+
+    /* 2. Interface Détails de Vente (Inversion colonnes) */
+    .row.g-4 { display: flex; flex-direction: column; }
+    .col-lg-4 { order: 1; } /* Résumé Financier en haut */
+    .col-lg-8 { order: 2; } /* Articles en bas */
+
+    /* 3. Transformation des Tableaux en Listes (Détails & Factures) */
+    .table-responsive-mobile table, 
+    .table-responsive-mobile thead, 
+    .table-responsive-mobile tbody, 
+    .table-responsive-mobile tr, 
+    .table-responsive-mobile td {
+        display: block; width: 100%;
+    }
+    .table-responsive-mobile thead { display: none; }
+    .table-responsive-mobile tr {
+        border-bottom: 1px solid #eee; padding: 10px 0;
+    }
+    .table-responsive-mobile td {
+        display: flex; justify-content: space-between;
+        padding: 4px 0 !important; border: none !important;
+        font-size: 0.75rem !important;
+    }
+    .table-responsive-mobile td::before {
+        content: attr(data-label); font-weight: 600;
+        color: #adb5bd; text-transform: uppercase; font-size: 0.65rem;
+    }
+}
+
+/* --- OPTIMISATIONS MOBILE SPECIFIQUES CREANCES (< 768px) --- */
+@media (max-width: 767.98px) {
+    /* On réduit les espaces internes de la modale */
+    #paymentModal .modal-body {
+        padding: 1.25rem !important;
+    }
+
+    /* On rend l'affichage du reste à payer plus compact */
+    #paymentModal h2 {
+        font-size: 1.5rem !important;
+    }
+
+    /* On ajuste la taille des inputs pour le tactile */
+    #paymentModal .form-control-lg {
+        font-size: 1.1rem !important;
+        padding: 0.6rem 1rem !important;
+    }
+
+    /* Bouton de confirmation plus fin comme demandé précédemment */
+    #paymentModal .btn-payment-main {
+        width: 100%; /* Pleine largeur sur mobile pour le pouce */
+        padding: 0.7rem !important;
+        font-size: 0.85rem !important;
+    }
+    .debt-grid {
+        padding: 10px; display: grid; grid-template-columns: 1fr; gap: 12px;
+    }
+    
+    .debt-card {
+        background: #ffffff; border-radius: 12px; padding: 12px;
+        border: 1px solid #f0f0f0; border-left: 4px solid #dc3545; 
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease;
+    }
+
+    .debt-card:active { transform: scale(0.98); }
+
+    .debt-progress-bar {
+        height: 6px; background: #e9ecef; border-radius: 10px;
+        margin: 10px 0; overflow: hidden; display: flex;
+    }
+
+    .debt-progress-bar .progress-bar {
+        height: 100%; background-color: #198754 !important;
+        transition: width 0.6s ease;
+    }
+
+    .debt-card .btn-sm {
+        padding: 0.2rem 0.5rem !important;
+        font-size: 0.65rem !important;
+        border-radius: 6px !important;
+    }
+}

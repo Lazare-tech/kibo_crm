@@ -1,0 +1,124 @@
+/* leads.css - Approche Adaptative Senior */
+
+/* --- MODE DESKTOP --- */
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.hover-primary:hover {
+    color: var(--primary-color) !important;
+}
+
+/* --- MODE MOBILE & TABLETTE (< 768px) --- */
+@media (max-width: 767.98px) {
+    /* 1. Transformation du tableau en liste */
+    #lead-table-body, 
+    #lead-table-body tr, 
+    #lead-table-body td {
+        display: block;
+        width: 100%;
+    }
+
+    /* 2. On cache les entêtes du tableau parent */
+    table thead {
+        display: none;
+    }
+
+    /* 3. Style de la "Carte" Lead */
+    #lead-table-body tr {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 15px;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        transition: transform 0.2s;
+    }
+
+    #lead-table-body tr:hover {
+        transform: translateY(-2px);
+        border-color: #dee2e6;
+    }
+
+    /* 4. Organisation interne de la carte */
+    #lead-table-body td {
+        border: none;
+        padding: 0.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* 5. Utilisation du data-label pour les titres à gauche */
+    #lead-table-body td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        font-size: 0.65rem;
+        color: #adb5bd;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* 6. Exception pour la première cellule (Nom/Avatar) */
+    #lead-table-body td[data-label="Prospect"] {
+        flex-direction: row-reverse; /* Met l'avatar/nom à droite du label */
+        justify-content: space-between;
+        border-bottom: 1px solid #f8f9fa;
+        margin-bottom: 0.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    #lead-table-body td[data-label="Prospect"]::before {
+        content: "Identité";
+    }
+
+    /* 7. Boutons d'actions en plein écran sur mobile */
+    #lead-table-body td[data-label="Actions"] {
+        justify-content: center;
+        margin-top: 0.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f8f9fa;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+        padding: 0.5rem;
+    }
+}
+/* Style spécifique au Pipeline */
+.pipeline-container {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll fluide iOS */
+    gap: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* Scrollbar personnalisée pour le pipeline */
+.pipeline-container::-webkit-scrollbar {
+    height: 8px;
+}
+.pipeline-container::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 10px;
+}
+
+@media (max-width: 767.98px) {
+    .pipeline-column {
+        min-width: 85vw !important; /* On montre presque toute la colonne sur mobile */
+        max-width: 85vw;
+    }
+    
+    .pipeline-container {
+        scroll-snap-type: x mandatory; /* Effet aimanté au défilement */
+    }
+    
+    .pipeline-column {
+        scroll-snap-align: center; /* Centre la colonne au scroll */
+    }
+}
