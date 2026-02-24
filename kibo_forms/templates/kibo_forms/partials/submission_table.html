@@ -2,13 +2,13 @@
 
 <div id="total-count" hx-swap-oob="true">{{ total_found }}</div>
 
-<div id="submission-area" class="table-container shadow-sm border rounded-3 bg-white">
-    <div class="row g-0 bg-dark text-white py-3 px-4 rounded-top small fw-bold text-uppercase" style="letter-spacing: 1px;">
+<div id="submission-area" class="table-container shadow-sm border rounded-3 bg-white overflow-hidden">
+    <div class="row g-0 bg-dark text-white py-3 px-4 d-none d-md-flex small fw-bold text-uppercase" style="letter-spacing: 1px;">
         <div class="col-md-3">Date & Heure</div>
         {% for header in headers|slice:":2" %}
             <div class="col-md-4 px-2">{{ header }}</div>
         {% endfor %}
-        <div class="col-md-1 text-end">Action</div>
+        <div class="col-md-1 text-end">Détails</div>
     </div>
 
     <div class="accordion accordion-flush" id="accordionSubmissions">
@@ -18,17 +18,22 @@
                 <button class="accordion-button collapsed py-3 px-4" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ sub.id }}">
                     <div class="row w-100 align-items-center g-0">
                         <div class="col-md-3">
-                            <span class="text-dark fw-bold">{{ sub.submitted_at|date:"d/m/Y" }}</span>
+                            <span class="mobile-label">Date de soumission</span>
+                            <span class="text-dark fw-bold" style="font-size: 0.85rem;">{{ sub.submitted_at|date:"d/m/Y" }}</span>
                             <span class="text-muted ms-1 small">{{ sub.submitted_at|date:"H:i" }}</span>
                         </div>
 
                         {% for header in headers|slice:":2" %}
-                        <div class="col-md-4 px-2">
-                            <span class="text-dark">{{ sub.answers_data|dict_key:header|default:"—" }}</span>
+                        <div class="col-md-4 px-md-2">
+                            <span class="mobile-label">{{ header }}</span>
+                            <span class="text-dark d-block text-truncate" style="font-size: 0.85rem;">
+                                {{ sub.answers_data|dict_key:header|default:"—" }}
+                            </span>
                         </div>
                         {% endfor %}
 
-                        <div class="col-md-1 text-end">
+                        <div class="col-md-1 text-end mobile-action-area">
+                            <span class="small text-primary d-md-none fw-bold me-2">Voir plus</span>
                             <i class="bi bi-eye text-primary opacity-50"></i>
                         </div>
                     </div>
@@ -36,19 +41,19 @@
             </h2>
 
             <div id="collapse{{ sub.id }}" class="accordion-collapse collapse" data-bs-parent="#accordionSubmissions">
-                <div class="accordion-body bg-light p-4">
-                    <div class="row g-3">
+                <div class="accordion-body bg-light p-3 p-md-4">
+                    <div class="row g-2 g-md-3">
                         {% for header in headers %}
                             {% if forloop.counter > 2 %}
                             <div class="col-md-6">
                                 <div class="card border-0 shadow-sm p-3 h-100">
-                                    <label class="small fw-bold mb-2 d-block" style="color: #6a8ea2; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.7rem;">
+                                    <label class="small fw-bold mb-1 d-block" style="color: #6a8ea2; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.6rem;">
                                         {{ header }}
                                     </label>
-                                    <div class="text-dark fw-medium">
+                                    <div class="text-dark fw-medium" style="font-size: 0.8rem;">
                                         {% with val=sub.answers_data|dict_key:header %}
                                             {% if "https://drive.google.com" in val|stringformat:"s" %}
-                                                <a href="{{ val.0 }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-3 mt-1">
+                                                <a href="{{ val.0 }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-3 mt-1 w-100 w-md-auto">
                                                     <i class="bi bi-paperclip"></i> Fichier joint
                                                 </a>
                                             {% else %}
@@ -65,18 +70,25 @@
             </div>
         </div>
         {% empty %}
-        <div class="p-5 text-center text-muted">Aucun résultat trouvé.</div>
+        <div class="p-5 text-center text-muted italic">Aucun résultat trouvé pour cette recherche.</div>
         {% endfor %}
     </div>
 
-    <nav class="d-flex justify-content-between align-items-center p-3">
-        <span class="small text-muted">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
-        <div class="btn-group">
+    <nav class="d-flex flex-column flex-md-row justify-content-between align-items-center p-3 gap-3 bg-light border-top">
+        <span class="small text-muted">Page <b>{{ page_obj.number }}</b> sur {{ page_obj.paginator.num_pages }}</span>
+        <div class="btn-group shadow-sm">
             {% if page_obj.has_previous %}
-            <button class="btn btn-sm btn-outline-secondary px-3" hx-get="?page={{ page_obj.previous_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML">Précédent</button>
+            <button class="btn btn-sm btn-white border px-3" hx-get="?page={{ page_obj.previous_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML">
+                <i class="bi bi-chevron-left"></i>
+            </button>
             {% endif %}
+            
+            <button class="btn btn-sm btn-primary px-4" disabled>{{ page_obj.number }}</button>
+
             {% if page_obj.has_next %}
-            <button class="btn btn-sm btn-outline-secondary px-3" hx-get="?page={{ page_obj.next_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML">Suivant</button>
+            <button class="btn btn-sm btn-white border px-3" hx-get="?page={{ page_obj.next_page_number }}&search={{ search_query }}" hx-target="#submission-area" hx-swap="outerHTML">
+                <i class="bi bi-chevron-right"></i>
+            </button>
             {% endif %}
         </div>
     </nav>

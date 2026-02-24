@@ -1,7 +1,8 @@
 /* ==========================================================================
-   INVENTORY APP - GLOBAL STYLES (PC & TABLETTE)
+   INVENTORY APP - GLOBAL & DESKTOP (PC)
    ========================================================================== */
 
+/* Animation au survol des cartes */
 .hover-shadow {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -9,72 +10,53 @@
     transform: translateY(-5px);
 }
 
+/* Alignement des grilles sur PC */
 @media (min-width: 768px) {
     #product-grid .card {
         min-height: 280px;
     }
 }
 
+/* Conteneur de tableau avec scroll fluide */
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* ==========================================================================
-   TABLETTE & PETIT PC (Sticky Columns)
-   ========================================================================== */
-@media (max-width: 991.98px) {
-    .table thead th {
-        white-space: nowrap;
-        background-color: #f8f9fa;
-        font-size: 0.7rem !important;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .table td:first-child, 
-    .table th:first-child {
-        position: sticky;
-        left: 0;
-        z-index: 10;
-        background-color: #fff;
-        border-right: 2px solid #eee;
-    }
-
-    .table { min-width: 850px; }
+/* Tableaux : Empêcher le texte de revenir à la ligne sur PC/Tablette */
+.table td {
+    white-space: nowrap;
 }
 
 /* ==========================================================================
-   MOBILE OPTIMISATIONS (Micro-UI)
+   MOBILE OPTIMISATIONS (Micro-UI < 768px)
    ========================================================================== */
+
 @media (max-width: 767.98px) {
     
-    /* 1. Grille de Stats 2x2 et Typographie Ultra-Compacte */
+    /* 1. GRILLE DE STATISTIQUES (2x2 ou 3 par ligne) */
     .row.stats-grid > div, 
     .row.g-3.mb-4 > div { 
-        width: 50% !important;
-        padding: 4px !important; /* Rapproche les cartes */
+        padding: 4px !important; 
     }
 
-    .row.g-3.mb-4 .card {
+    /* Cartes de Stats : Réduction typographique */
+    .row.g-3.mb-4 .card, .stats-card-mini .card {
         padding: 10px !important;
     }
 
-    /* Diminution des titres des stats */
     .row.g-3.mb-4 small.text-uppercase {
         font-size: 0.5rem !important;
         letter-spacing: 0.3px;
         opacity: 0.8;
     }
 
-    /* Diminution des gros chiffres (ex: 50 000 F) */
-    .row.g-3.mb-4 h4 {
-        font-size: 0.9rem !important;
+    .row.g-3.mb-4 h4, .stats-card-mini h3 {
+        font-size: 0.95rem !important;
         margin-top: 2px;
         letter-spacing: -0.5px;
     }
 
-    /* Diminution des sous-textes (ex: Capital dormant) */
     .row.g-3.mb-4 small.text-muted, 
     .row.g-3.mb-4 small.text-success {
         font-size: 0.55rem !important;
@@ -82,18 +64,45 @@
         line-height: 1.1;
     }
 
-    /* 2. Typographie Tableaux */
-    .table-responsive td, .table td {
-        font-size: 0.75rem !important;
-        padding: 0.5rem !important;
+    /* 2. COMPOSANTS DE LISTE (CARTES MOBILES) */
+
+    /* Cartes pour l'Historique (Mouvements) */
+    .history-mobile-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        border-left: 5px solid #dee2e6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .history-card-in { border-left-color: #28a745 !important; }
+    .history-card-out { border-left-color: #dc3545 !important; }
+
+    .history-meta {
+        font-size: 0.7rem;
+        color: #6c757d;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
     }
 
-    .badge {
-        font-size: 0.6rem !important;
-        padding: 0.3em 0.6em !important;
+    .history-product-name {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #2d3436;
+        margin-bottom: 5px;
     }
 
-    /* 3. Cartes de Rotation (Analyse Stratégique) */
+    .history-details {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px dashed #eee;
+    }
+
+    /* Cartes pour la Rotation (Analyse Stratégique) */
     .rotation-card {
         background: #fff;
         border-radius: 12px;
@@ -117,16 +126,41 @@
         gap: 4px;
     }
 
-    /* 4. IA & Boutons */
-    .card-ia { margin-top: 1rem; }
-    
-    #product-grid .col-12 { margin-bottom: 0.5rem; }
+    /* 3. TYPOGRAPHIE & BOUTONS MOBILES */
+    .table-responsive td, .table td {
+        font-size: 0.75rem !important;
+        padding: 0.5rem !important;
+    }
+
+    .badge {
+        font-size: 0.6rem !important;
+        padding: 0.3em 0.6em !important;
+    }
+
+    .qty-badge {
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
 
     .btn-sm-mobile {
         padding: 0.6rem !important;
         font-size: 0.8rem !important;
     }
 
-    /* Barres de progression fines */
+    /* Forcer les boutons d'action en pleine largeur */
+    .w-md-auto {
+        width: 100% !important;
+        margin-top: 10px;
+    }
+
+    /* 4. DIVERS */
+    .card-ia { margin-top: 1rem; }
+    #product-grid .col-12 { margin-bottom: 0.5rem; }
     .progress { height: 3px !important; }
+    .small-text { letter-spacing: 0.5px; }
+}
+
+/* Masquage intelligent pour desktop */
+@media (min-width: 768px) {
+    .d-mobile-history { display: none !important; }
 }

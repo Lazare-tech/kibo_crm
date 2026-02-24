@@ -1,72 +1,51 @@
 {% extends "base.html" %}
 {% load form_extras %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/apps/kibo_data.css' %}">
+{% endblock %}
 
 {% block content %}
-<style>
-    :root { --kibo-primary: #417690; --kibo-bg: #f4f7f6; }
-    body { background-color: var(--kibo-bg); }
-    .stat-card { border: none; border-radius: 12px; transition: all 0.3s; border-bottom: 4px solid var(--kibo-primary); }
-    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-    .table-container { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .table thead { background: var(--kibo-primary); color: white; }
-    .table thead th { font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; padding: 15px; }
-    .cell-truncate { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
-    .badge-date { background: #e9ecef; color: #495057; font-weight: 500; }
-    /* Animation de chargement HTMX */
-    .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
-    .htmx-request .htmx-indicator { opacity: 1; }
-    .htmx-request.table-container { opacity: 0.6; }
-</style>
-
-<div class="container-fluid py-4 px-4">
+<div class="container-fluid py-3 py-md-4 px-2 px-md-4">
     
     <div class="row align-items-center mb-4">
-        <div class="col-md-6">
-            <h2 class="fw-bold text-dark mb-0">{{ form.title }}</h2>
+        <div class="col-lg-6 col-12">
+            <h2 class="fw-bold text-dark mb-0 h4">{{ form.title }}</h2>
             <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{% url 'kibo_forms:form_list' %}">Accueil</a></li>
-                    <li class="breadcrumb-item active">Dashboard</li>
+                <ol class="breadcrumb mb-0 small">
+                    <li class="breadcrumb-item"><a href="{% url 'kibo_forms:form_list' %}" class="text-decoration-none text-muted">Accueil</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold">Analyse</li>
                 </ol>
             </nav>
         </div>
-        <div class="col-md-6 text-md-end">
-           <div class="btn-group shadow-sm">
-    <button class="btn btn-white border dropdown-toggle" data-bs-toggle="dropdown">
-        <i class="bi bi-download me-2"></i>Exporter
-    </button>
-    <ul class="dropdown-menu shadow border-0">
-        <li>
-            <a class="dropdown-item" 
-               href="?export=excel" 
-               onclick="const url = new URL(window.location); url.searchParams.delete('export'); setTimeout(() => window.history.replaceState({}, '', url), 10);">
-                <i class="bi bi-file-earmark-excel text-success me-2"></i>Format Excel
-            </a>
-        </li>
-        <li>
-            <a class="dropdown-item" 
-               href="?export=csv" 
-               onclick="const url = new URL(window.location); url.searchParams.delete('export'); setTimeout(() => window.history.replaceState({}, '', url), 10);">
-                <i class="bi bi-filetype-csv text-muted me-2"></i>Format CSV
-            </a>
-        </li>
-    </ul>
-</div>
-            <button class="btn btn-primary shadow-sm ms-2" onclick="window.print()">Imprimer</button>
+        <div class="col-lg-6 col-12 header-actions text-md-end">
+            <div class="btn-group shadow-sm">
+                <button class="btn btn-white border dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-download me-2 text-primary"></i>Exporter
+                </button>
+                <ul class="dropdown-menu shadow border-0 mt-2">
+                    <li><a class="dropdown-item py-2" href="?export=excel"><i class="bi bi-file-earmark-excel text-success me-2"></i>Excel</a></li>
+                    <li><a class="dropdown-item py-2" href="?export=csv"><i class="bi bi-filetype-csv text-muted me-2"></i>CSV</a></li>
+                </ul>
+            </div>
+            <button class="btn btn-primary shadow-sm ms-md-2" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Imprimer
+            </button>
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <div class="input-group shadow-sm ">
-                <span class="input-group-text bg-white border-end-0">
+    <div class="row g-2 g-md-4 mb-4 stats-row-mobile align-items-stretch">
+        <div class="col-12 col-md-4 search-container">
+            <div class="input-group shadow-sm rounded-3 overflow-hidden border">
+                <span class="input-group-text bg-white border-0">
                     <i class="bi bi-search text-muted htmx-indicator" id="search-spinner"></i>
-                    <i class="fa fa-search text-muted htmx-indicator-reversed"></i>
+                    <i class="fas fa-search text-primary htmx-indicator-reversed"></i>
                 </span>
                 <input type="text" 
                        name="search" 
-                       class="form-control border-start-0" 
-                       placeholder="Tapez pour filtrer instantanément..." 
+                       class="form-control border-0 py-2" 
+                       placeholder="Filtrer..." 
                        hx-get="{% url 'kibo_forms:form_dashboard' form.slug %}" 
                        hx-trigger="keyup changed delay:500ms" 
                        hx-target="#submission-area" 
@@ -75,24 +54,23 @@
             </div>
         </div>
         
-        <div class="col-md-3">
-            <div class="card stat-card p-3 shadow-sm h-100">
-                <div class="text-muted small fw-bold text-uppercase">Total trouvé</div>
+        <div class="col-6 col-md-4">
+            <div class="card stat-card p-3 shadow-sm h-100 bg-white">
+                <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">Total trouvé</div>
                 <div class="h2 fw-bold mb-0 text-primary" id="total-count">{{ page_obj.paginator.count }}</div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card stat-card p-3 shadow-sm h-100" style="border-bottom-color: #28a745;">
-                <div class="text-muted small fw-bold text-uppercase">Aujourd'hui</div>
-                <div class="h2 fw-bold mb-0">{{ today_count|default:"0" }}</div>
+        <div class="col-6 col-md-4">
+            <div class="card stat-card p-3 shadow-sm h-100 bg-white" style="border-bottom-color: #28a745;">
+                <div class="text-muted small fw-bold text-uppercase" style="font-size: 0.6rem;">Aujourd'hui</div>
+                <div class="h2 fw-bold mb-0 text-success">{{ today_count|default:"0" }}</div>
             </div>
         </div>
     </div>
 
-    <div id="submission-area" class="table-container">
+    <div id="submission-area" class="table-container shadow-sm border-0 rounded-4">
         {% include 'kibo_forms/partials/submission_table.html' %}
     </div>
 
 </div>
-
 {% endblock content %}

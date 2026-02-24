@@ -1,49 +1,62 @@
 {% for movement in movements %}
-<tr class="align-middle">
-    <td class="ps-4" data-label="Date">
-        <div class="d-flex flex-column">
-            <span class="small fw-bold text-dark">{{ movement.date|date:"d/m/Y" }}</span>
-            <span class="text-muted" style="font-size: 0.7rem;">{{ movement.date|date:"H:i" }}</span>
+    
+    {% if mode == "table" %}
+    <tr class="align-middle">
+        <td class="ps-4">
+            <div class="d-flex flex-column">
+                <span class="small fw-bold text-dark">{{ movement.date|date:"d/m/Y" }}</span>
+                <span class="text-muted" style="font-size: 0.7rem;">{{ movement.date|date:"H:i" }}</span>
+            </div>
+        </td>
+        <td class="fw-bold text-primary small">{{ movement.product.name }}</td>
+        <td>
+            {% if movement.movement_type == 'entree' %}
+                <span class="badge bg-success-subtle text-success rounded-pill px-3">Entrée</span>
+            {% else %}
+                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Sortie</span>
+            {% endif %}
+        </td>
+        <td class="text-center fw-bold">
+            <span class="{% if movement.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
+                {% if movement.movement_type == 'entree' %}+{% else %}-{% endif %}{{ movement.quantity }}
+            </span>
+        </td>
+        <td><small class="text-muted">{{ movement.user.username|default:"Système" }}</small></td>
+        <td class="pe-4 text-truncate" style="max-width: 150px;">{{ movement.reason|default:"-" }}</td>
+    </tr>
+
+    {% else %}
+    <div class="card border-0 shadow-sm mb-3 overflow-hidden" 
+         style="border-left: 5px solid {% if movement.movement_type == 'entree' %}#28a745{% else %}#dc3545{% endif %} !important;">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ movement.product.name }}</div>
+                    <small class="text-muted">{{ movement.date|date:"d/m/Y" }} • {{ movement.date|date:"H:i" }}</small>
+                </div>
+                <div class="h5 fw-bold mb-0 {% if movement.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
+                    {% if movement.movement_type == 'entree' %}+{% else %}-{% endif %}{{ movement.quantity }}
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                <span class="badge {% if movement.movement_type == 'entree' %}bg-success{% else %}bg-danger{% endif %} px-2 py-1" style="font-size: 0.6rem;">
+                    {{ movement.movement_type|upper }}
+                </span>
+                <small class="text-muted"><i class="fas fa-user-circle"></i> {{ movement.user.username|default:"Admin" }}</small>
+            </div>
+            {% if movement.reason %}
+            <div class="mt-2 small text-muted bg-light p-2 rounded" style="font-size: 0.7rem;">
+                {{ movement.reason }}
+            </div>
+            {% endif %}
         </div>
-    </td>
+    </div>
+    {% endif %}
 
-    <td data-label="Produit">
-        <div class="fw-bold text-primary small">{{ movement.product.name }}</div>
-    </td>
-
-    <td data-label="Action">
-        {% if movement.movement_type == 'entree' %}
-            <span class="badge bg-success-subtle text-success rounded-pill px-3">
-                <i class="fas fa-arrow-up me-1"></i> Entrée
-            </span>
-        {% else %}
-            <span class="badge bg-danger-subtle text-danger rounded-pill px-3">
-                <i class="fas fa-arrow-down me-1"></i> Sortie
-            </span>
-        {% endif %}
-    </td>
-
-    <td class="text-md-center text-end fw-bold h6" data-label="Quantité">
-        <span class="{% if movement.movement_type == 'entree' %}text-success{% else %}text-danger{% endif %}">
-            {% if movement.movement_type == 'entree' %}+{% else %}-{% endif %}{{ movement.quantity }}
-        </span>
-    </td>
-
-    <td data-label="Auteur" class="d-none d-sm-table-cell">
-        <span class="small text-muted"><i class="fas fa-user-circle me-1"></i>{{ movement.user.username|default:"Système" }}</span>
-    </td>
-
-    <td data-label="Note">
-        <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;" title="{{ movement.reason }}">
-            {{ movement.reason|default:"-" }}
-        </small>
-    </td>
-</tr>
 {% empty %}
-<tr>
-    <td colspan="6" class="text-center py-5 text-muted small italic">
-        <i class="fas fa-history fa-2x mb-3 opacity-25"></i><br>
-        Aucun mouvement enregistré.
-    </td>
-</tr>
+    {% if mode == "table" %}
+        <tr><td colspan="6" class="text-center py-5 text-muted small">Aucun mouvement trouvé.</td></tr>
+    {% else %}
+        <div class="text-center py-5 text-muted small italic">Aucun mouvement trouvé.</div>
+    {% endif %}
 {% endfor %}
