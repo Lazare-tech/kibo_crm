@@ -178,3 +178,55 @@ def handle_export(fmt, slug, queryset):
         response['Content-Disposition'] = f'attachment; filename="export_{slug}.xlsx"'
         wb.save(response)
         return response
+
+from django.db.models import Count, F
+from django.shortcuts import render, get_object_or_404
+from .models import Form
+
+def form_stats_view(request, slug):
+    form = get_object_or_404(Form, slug=slug)
+    submissions = form.submissions.all()
+    total = submissions.count()
+    
+    all_stats = []
+    
+    # On récupère les questions via la propriété @property headers du modèle
+    for header in form.headers:
+        # Agrégation SQL rapide : Groupe par valeur et compte
+        question_data = submissions.annotate(
+            answer_value=F(f'answers_data__{header}')
+        ).values('answer_value').annotate(
+            count=Count('id')
+        ).order_by('-count')
+
+        # --- LOGIQUE DE DÉCISION DU TYPE DE GRAPHIQUE (ALGORITHME GOOGLE) ---
+        num_options = len(question_data)
+        
+        # 1. Si beaucoup de texte unique (ex: noms, emails, longs paragraphes) -> LISTE
+        # On considère que si presque chaque réponse est unique, c'est du texte libre
+        if num_options > (total * 0.9) and total > 5:
+            display_type = 'text'
+            
+        # 2. Si peu de choix (2 à 6 options, ex: Oui/Non, Sexe, Tranche d'âge) -> CAMEMBERT
+        elif 2 <= num_options <= 6:
+            display_type = 'pie'
+            
+        # 3. Si beaucoup de choix catégorisés (7 à 15 options, ex: Pays, Services) -> BARRES
+        elif 6 < num_options <= 20:
+            display_type = 'bar'
+            
+        # 4. Par défaut ou si trop de catégories pour un graphique lisible -> LISTE
+        else:
+            display_type = 'text'
+
+        all_stats.append({
+            'label': header,
+            'data': list(question_data), # Convertir en liste pour le template
+            'display_type': display_type
+        })
+
+    return render(request, 'kibo_forms/stats.html', {
+        'form': form,
+        'total': total,
+        'all_stats': all_stats
+    })

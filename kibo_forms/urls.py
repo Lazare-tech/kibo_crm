@@ -11,4 +11,5 @@ urlpatterns = [
     # Change cette ligne dans ton urls.py
 path('google_webhook/', kibo_forms.views.google_form_webhook, name='google_webhook'),
     path('dashboard/<slug:slug>/', kibo_forms.views.form_dashboard, name='form_dashboard'),
+    path('statistique/<slug:slug>/', kibo_forms.views.form_stats_view, name='form_stats')
 ]

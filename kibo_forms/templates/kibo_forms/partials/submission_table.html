@@ -25,7 +25,7 @@
 
                         {% for header in headers|slice:":2" %}
                         <div class="col-md-4 px-md-2">
-                            <span class="mobile-label">{{ header }}</span>
+                            <span class="mobile-label text-muted">{{ header }}</span>
                             <span class="text-dark d-block text-truncate" style="font-size: 0.85rem;">
                                 {{ sub.answers_data|dict_key:header|default:"—" }}
                             </span>

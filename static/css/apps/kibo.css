@@ -150,3 +150,23 @@
         margin-bottom: 10px;
     }
 }
+/* Style du titre de la question */
+.border-bottom {
+    border-color: #eef2f7 !important;
+}
+
+/* Effet de survol sur les lignes de statistiques */
+.stats-results-area .mb-3:hover .progress-bar {
+    filter: brightness(1.1);
+}
+
+/* Style spécifique pour le FIELD (la valeur) */
+.text-secondary {
+    color: #495057 !important;
+    font-size: 0.85rem;
+}
+
+/* Style spécifique pour le COUNT (le chiffre) */
+.text-primary {
+    color: #4361ee !important; /* Ta couleur primaire KIBO */
+}

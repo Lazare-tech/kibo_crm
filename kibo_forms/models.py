@@ -16,6 +16,22 @@ class Form(models.Model):
     created_at = models.DateTimeField(auto_now_add=True,verbose_name="Date de création")
     slug = models.SlugField(unique=True) # Utilisé dans l'URL du Webhook
 
+    @property
+    def headers(self):
+        """
+        Récupère dynamiquement les clés du dictionnaire JSON 
+        de la toute première soumission.
+        """
+        # On cherche la première soumission liée à ce formulaire
+        first_sub = self.submissions.first()
+        if first_sub and first_sub.answers_data:
+            # On retourne la liste des noms de questions
+            return list(first_sub.answers_data.keys())
+        return []
+
+    def __str__(self):
+        return self.title
+    
 class Submission(models.Model):
     form = models.ForeignKey(Form, on_delete=models.CASCADE, related_name='submissions',verbose_name="Formulaire associé")
     # C'est ici que tout est stocké (Textes, Nombres, Dates)
