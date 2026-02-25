@@ -15,8 +15,7 @@
 {% endblock extra_css %}
 
 {% block content %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <div class="container-fluid py-4 px-md-5 bg-light min-vh-100">
     <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
         <div class="card-header bg-primary py-1"></div>
@@ -29,57 +28,52 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        {% for stat in all_stats %}
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-                <div class="border-bottom pb-3 mb-4">
-                    <h5 class="fw-bold text-dark mb-1">{{ stat.label }}</h5>
-                    <small class="text-muted">{{ total }} réponses</small>
-                </div>
+   <div class="row g-4">
+    {% for stat in all_stats %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+            <div class="border-bottom pb-3 mb-4">
+                <h5 class="fw-bold text-dark mb-1">{{ stat.label }}</h5>
+                <small class="text-muted">{{ total }} réponses</small>
+            </div>
 
-                <div class="row align-items-center">
-                    {% if stat.display_type == 'pie' %}
-                        <div class="col-md-6">
-                            <div class="chart-container">
-                                <canvas id="chart-{{ forloop.counter0 }}"></canvas>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mt-3 mt-md-0">
+            <div class="row align-items-center">
+                {% if stat.display_type == 'pie' %}
+                    <div class="col-md-6">
+                        <canvas id="chart-{{ forloop.counter0 }}" style="max-height: 250px;"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="ps-md-4">
                             {% for item in stat.data %}
                             <div class="d-flex justify-content-between align-items-center mb-2 small">
-                                <span>{{ item.answer_value|default:"Sans réponse" }}</span>
+                                <span class="text-secondary">{{ item.answer_value|default:"Sans réponse" }}</span>
                                 <span class="fw-bold">{{ item.count|percentage:total }}%</span>
                             </div>
                             {% endfor %}
                         </div>
+                    </div>
 
-                    {% elif stat.display_type == 'bar' %}
-                        <div class="col-12">
-                            <div class="chart-container">
-                                <canvas id="chart-{{ forloop.counter0 }}"></canvas>
-                            </div>
-                        </div>
+                {% elif stat.display_type == 'bar' %}
+                    <div class="col-12">
+                        <canvas id="chart-{{ forloop.counter0 }}" style="max-height: 350px;"></canvas>
+                    </div>
 
-                    {% else %}
-                        <div class="col-12">
-                            <div class="list-group list-group-flush">
-                                {% for item in stat.data|slice:":10" %}
-                                <div class="list-group-item bg-light border-0 rounded-3 mb-2 small py-3">
-                                    {{ item.answer_value|default:"(Vide)" }}
-                                </div>
-                                {% endfor %}
-                                {% if stat.data|length > 10 %}
-                                <small class="text-muted ps-2">+ {{ stat.data|length|add:"-10" }} autres réponses...</small>
-                                {% endif %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="list-group list-group-flush">
+                            {% for item in stat.data|slice:":15" %}
+                            <div class="list-group-item bg-light border-0 rounded-3 mb-2 py-3 px-4">
+                                {{ item.answer_value|default:"(Vide)" }}
                             </div>
+                            {% endfor %}
                         </div>
-                    {% endif %}
-                </div>
+                    </div>
+                {% endif %}
             </div>
         </div>
-        {% endfor %}
     </div>
+    {% endfor %}
+</div>
 </div>
 
 <script>
