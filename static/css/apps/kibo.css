@@ -170,3 +170,68 @@
 .text-primary {
     color: #4361ee !important; /* Ta couleur primaire KIBO */
 }
+/* --- KIBO FORMS ANALYTICS --- */
+:root {
+    --google-violet: #673ab7;
+    --google-bg: #f0ebf8;
+    --google-border: #dadce0;
+    --google-text: #202124;
+}
+/* --- KIBO FORMS ANALYTICS : VERSION FINALE --- */
+.analytics-page { 
+    background-color: #f0ebf8 !important; 
+    font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif !important;
+}
+
+/* On centre le contenu dans une colonne lisible (770px est le standard Google) */
+.analytics-main-wrapper {
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.kibo-analytics-card { 
+    background: #ffffff;
+    border: 1px solid #dadce0 !important; 
+    border-radius: 8px !important;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+}
+
+.header-card-google { 
+    border-top: 10px solid #673ab7 !important; 
+}
+
+.question-title {
+    font-size: 1.1rem;
+    color: #202124;
+    font-weight: 400;
+}
+
+.answer-item-box {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    margin-bottom: 2px;
+    font-size: 14px;
+    border-radius: 4px;
+    color: #3c4043;
+}
+
+.chart-holder { 
+    position: relative; 
+    height: 320px; 
+    width: 100%; 
+    margin-top: 10px;
+}
+/* static/css/apps/kibo.css */
+.chart-container-fixed {
+    position: relative;
+    height: 320px; /* On augmente un peu la hauteur */
+    width: 100%;
+}
+
+/* Sur mobile, on a besoin de plus d'espace vertical pour la légende */
+@media (max-width: 768px) {
+    .chart-container-fixed {
+        height: 450px; 
+    }
+}

@@ -4,127 +4,100 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/apps/kibo.css' %}">
-<style>
-    /* Style spécifique pour copier l'aspect Google Forms */
-    body { background-color: #f0ebf8 !important; } 
-    .card-header.bg-primary { background-color: #673ab7 !important; border: none; }
-    .progress-bar { background-color: #673ab7 !important; }
-    /* Conteneur de graphique pour limiter la hauteur */
-    .chart-container { position: relative; margin: auto; height: 300px; width: 100%; }
-</style>
-{% endblock extra_css %}
+{% endblock %}
 
 {% block content %}
+<script>document.body.classList.add('analytics-page');</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<div class="container-fluid py-4 px-md-5 bg-light min-vh-100">
-    <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
-        <div class="card-header bg-primary py-1"></div>
-        <div class="card-body p-4">
-            <h1 class="h3 fw-bold mb-2">{{ form.title }}</h1>
-            <div class="d-flex gap-3 text-muted small">
-                <span><i class="bi bi-file-earmark-text me-1"></i> {{ total }} réponses</span>
-                <span><i class="bi bi-clock me-1"></i> Mise à jour : En temps réel</span>
-            </div>
+
+<div class="analytics-main-wrapper">
+    
+    <div class="card kibo-analytics-card header-card-google p-4 p-md-5">
+        <h1 class="h2 fw-normal mb-3">{{ form.title }}</h1>
+        <div class="d-flex align-items-center border-top pt-3">
+            <span class="badge bg-light text-dark border fw-normal px-3 py-2 rounded-pill">
+                {{ total }} réponse{{ total|pluralize }}
+            </span>
+            <small class="ms-3 text-muted small">Résumé des réponses</small>
         </div>
     </div>
 
-   <div class="row g-4">
-    {% for stat in all_stats %}
-    <div class="col-12">
-        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
-            <div class="border-bottom pb-3 mb-4">
-                <h5 class="fw-bold text-dark mb-1">{{ stat.label }}</h5>
-                <small class="text-muted">{{ total }} réponses</small>
-            </div>
+    <div class="row">
+        {% for stat in all_stats %}
+        <div class="col-12">
+            <div class="card kibo-analytics-card p-4 p-md-5">
+                <div class="mb-4">
+                    <h6 class="question-title mb-1">{{ stat.label }}</h6>
+                    <small class="text-muted">{{ total }} réponses</small>
+                </div>
 
-            <div class="row align-items-center">
-                {% if stat.display_type == 'pie' %}
-                    <div class="col-md-6">
-                        <canvas id="chart-{{ forloop.counter0 }}" style="max-height: 250px;"></canvas>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="ps-md-4">
-                            {% for item in stat.data %}
-                            <div class="d-flex justify-content-between align-items-center mb-2 small">
-                                <span class="text-secondary">{{ item.answer_value|default:"Sans réponse" }}</span>
-                                <span class="fw-bold">{{ item.count|percentage:total }}%</span>
+                <div class="row">
+                    {% if stat.display_type == 'text' %}
+                        <div class="col-12">
+                            <div class="d-flex flex-column">
+                                {% for item in stat.data|slice:":15" %}
+                                <div class="answer-item-box">
+                                    {{ item.answer_value|default:"(Vide)" }}
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
                         </div>
-                    </div>
-
-                {% elif stat.display_type == 'bar' %}
-                    <div class="col-12">
-                        <canvas id="chart-{{ forloop.counter0 }}" style="max-height: 350px;"></canvas>
-                    </div>
-
-                {% else %}
-                    <div class="col-12">
-                        <div class="list-group list-group-flush">
-                            {% for item in stat.data|slice:":15" %}
-                            <div class="list-group-item bg-light border-0 rounded-3 mb-2 py-3 px-4">
-                                {{ item.answer_value|default:"(Vide)" }}
+                    {% else %}
+                        <div class="col-12">
+                            <div class="chart-holder">
+                                <canvas id="chart-{{ forloop.counter0 }}"></canvas>
                             </div>
-                            {% endfor %}
                         </div>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Palette de couleurs Google
-    const colors = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1', '#FF7043', '#9E9E9E'];
+    const googleBlue = '#4285F4'; // Couleur de tes images
+    const googleColors = ['#4285F4', '#DB4437', '#F4B400', '#0F9D58', '#AB47BC', '#00ACC1'];
 
     {% for stat in all_stats %}
-        {% if stat.display_type != 'text' %}
-        new Chart(document.getElementById('chart-{{ forloop.counter0 }}'), {
-            type: '{{ stat.display_type }}',
-            data: {
-                labels: [{% for item in stat.data %}"{{ item.answer_value|default:'Sans réponse'|truncatechars:25 }}",{% endfor %}],
-                datasets: [{
-                    data: [{% for item in stat.data %}{{ item.count }},{% endfor %}],
-                    backgroundColor: colors,
-                    hoverOffset: 10,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: {% if stat.display_type == 'pie' %}true{% else %}false{% endif %},
-                        position: 'right',
-                        labels: { boxWidth: 12, font: { size: 11 } }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                let value = context.raw || 0;
-                                let total = {{ total }};
-                                let percentage = Math.round((value / total) * 100);
-                                return label + ': ' + value + ' (' + percentage + '%)';
-                            }
-                        }
-                    }
-                },
-                {% if stat.display_type == 'bar' %}
-                indexAxis: 'y',
-                scales: {
-                    x: { beginAtZero: true, grid: { display: false } },
-                    y: { grid: { display: false } }
+    {% if stat.display_type != 'text' %}
+    new Chart(document.getElementById('chart-{{ forloop.counter0 }}'), {
+        type: '{% if stat.display_type == "pie" %}pie{% else %}bar{% endif %}',
+        data: {
+            // IMPORTANT : On ne coupe plus le texte ici pour éviter les "..."
+            labels: [{% for item in stat.data %}"{{ item.answer_value|default:'Sans réponse'|safe }}",{% endfor %}],
+            datasets: [{
+                data: [{% for item in stat.data %}{{ item.count }},{% endfor %}],
+                backgroundColor: {% if stat.display_type == 'pie' %}googleColors{% else %}[googleBlue]{% endif %},
+                borderRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            // bar_vertical -> axe X (vertical), bar -> axe Y (horizontal)
+            indexAxis: '{% if stat.display_type == "bar" %}y{% else %}x{% endif %}',
+            plugins: {
+                legend: { 
+                    display: {% if stat.display_type == 'pie' %}true{% else %}false{% endif %},
+                    position: 'right'
                 }
-                {% endif %}
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    display: {% if stat.display_type == "pie" %}false{% else %}true{% endif %}
+                },
+                x: {
+                    display: {% if stat.display_type == "pie" %}false{% else %}true{% endif %},
+                    grid: { display: {% if stat.display_type == "bar" %}true{% else %}false{% endif %} }
+                }
             }
-        });
-        {% endif %}
+        }
+    });
+    {% endif %}
     {% endfor %}
 });
 </script>

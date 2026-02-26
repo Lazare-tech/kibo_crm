@@ -20,54 +20,64 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 
+# @csrf_exempt
+# def google_form_webhook(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             # On récupère le slug que la bibliothèque a mis dans "_slug"
+#             slug = data.get('_slug') 
+            
+#             form_obj = get_object_or_404(Form, slug=slug)
+            
+#             # On nettoie les données pour ne pas enregistrer le slug dans les réponses
+#             answers = {k: v for k, v in data.items() if not k.startswith('_')}
+            
+#             # Enregistrement
+#             Submission.objects.create(
+#                 form=form_obj,
+#                 answers_data=answers
+#             )
+#             return JsonResponse({'status': 'success'}, status=201)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=400)
+#     return JsonResponse({'status': 'method not allowed'}, status=405)
+from django.utils.text import slugify
+
 @csrf_exempt
+
 def google_form_webhook(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            # On récupère le slug que la bibliothèque a mis dans "_slug"
-            slug = data.get('_slug') 
+            raw_title = data.get('_form_name', 'Formulaire Sans Nom').strip()
+            clean_title = raw_title.replace(' (réponses)', '').strip()
             
-            form_obj = get_object_or_404(Form, slug=slug)
+            # 1. Création ou récupération du formulaire
+            form_obj, created = Form.objects.get_or_create(
+                title=clean_title,
+                defaults={
+                    'slug': slugify(clean_title),
+                }
+            )
+
+            # 2. Nettoyage des réponses de Google (conversion des listes en valeurs simples)
+            raw_answers = data.get('responses', {})
+            clean_answers = {k: v[0] if isinstance(v, list) else v for k, v in raw_answers.items()}
             
-            # On nettoie les données pour ne pas enregistrer le slug dans les réponses
-            answers = {k: v for k, v in data.items() if not k.startswith('_')}
-            
-            # Enregistrement
+            # 3. Enregistrement de la soumission
             Submission.objects.create(
                 form=form_obj,
-                answers_data=answers
+                answers_data=clean_answers
             )
-            return JsonResponse({'status': 'success'}, status=201)
+            
+            return JsonResponse({'status': 'success', 'created': created}, status=201)
+
         except Exception as e:
+            print(f"Erreur Webhook : {str(e)}") 
             return JsonResponse({'error': str(e)}, status=400)
-    return JsonResponse({'status': 'method not allowed'}, status=405)
 ########################################################################################
-@csrf_exempt # Obligatoire car Google n'a pas ton token CSRF
-def google_form_webhook(request, slug):
-    if request.method == 'POST':
-        print(f"BODY REÇU : {request.body}") # <--- AJOUTE ÇA
-        try:
-            # form_obj = Form.objects.get(slug=slug)
-            form_obj = get_object_or_404(Form, slug=slug)
-            data = json.loads(request.body)
-            if '_submitted_at' in data:
-                data['_submitted_at'] = str(data['_submitted_at'])
-            # Stockage direct du dictionnaire envoyé par Google
-            # Submission.objects.create(
-            #     form=form_obj,
-            #     answers_data=data
-            # )
-            submission = Submission(
-                form=form_obj,
-                answers_data=data
-            )
-            submission.save() # Django gérera le created_at tout seul via auto_now_add
-            return JsonResponse({'status': 'success'}, status=201)
-        except Exception as e:
-            print(f"Erreur Webhook: {e}")
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    return JsonResponse({'status': 'not allowed'}, status=405)
+
 ###############3
 def form_list(request):
     forms = Form.objects.all().order_by('title')
@@ -184,7 +194,6 @@ from django.shortcuts import render, get_object_or_404
 from .models import Form
 
 from django.db.models import Count, F
-
 def form_stats_view(request, slug):
     form = get_object_or_404(Form, slug=slug)
     submissions = form.submissions.all()
@@ -192,27 +201,31 @@ def form_stats_view(request, slug):
     all_stats = []
 
     for header in form.headers:
-        # 1. On récupère les données groupées
         question_data = submissions.annotate(
             answer_value=F(f'answers_data__{header}')
         ).values('answer_value').annotate(
             count=Count('id')
         ).order_by('-count')
 
-        num_unique_answers = len(question_data)
+        num_unique = len(question_data)
         
-        # --- LOGIQUE DE DÉCISION GOOGLE FORMS ---
+        # --- LOGIQUE DE SÉPARATION STRICTE ---
         
-        # CAS A : Moins de 6 options (ex: Oui/Non, Choix unique) -> PIE (Circulaire)
-        if 2 <= num_unique_answers <= 6:
+        # 1. IDENTITÉ (Nom, Prénom, Email) -> Histogramme Vertical (Image 1)
+        # On détecte si c'est du texte très varié (presque unique)
+        if num_unique > (total * 0.8) and total > 2:
+            display_type = 'bar_vertical'
+            
+        # 2. CASES À COCHER / CHOIX MULTIPLES -> Histogramme Horizontal (Image 2)
+        # Google utilise l'horizontal dès que le texte est un peu long ou pour les domaines
+        elif 5 < num_unique <= 20:
+            display_type = 'bar'
+            
+        # 3. PETITS CHOIX (Oui/Non, Sexe) -> Diagramme Circulaire
+        elif 2 <= num_unique <= 5:
             display_type = 'pie'
             
-        # CAS B : Entre 7 et 15 options (ex: Liste de pays, services) -> BAR (Barres Horizontales)
-                # Force les barres même pour 2 réponses pour tester le rendu
-        if 2 <= num_unique_answers <= 20:
-            display_type = 'bar'
-    
-        # CAS C : Beaucoup de réponses différentes ou texte long -> TEXT (Liste de réponses)
+        # 4. PAR DÉFAUT -> Liste textuelle
         else:
             display_type = 'text'
 
@@ -223,7 +236,5 @@ def form_stats_view(request, slug):
         })
 
     return render(request, 'kibo_forms/stats.html', {
-        'form': form,
-        'total': total,
-        'all_stats': all_stats
+        'form': form, 'total': total, 'all_stats': all_stats
     })
