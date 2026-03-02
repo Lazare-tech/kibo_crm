@@ -27,13 +27,13 @@
                 <a href="{% url 'inventory:stock-history' product.pk %}" class="btn btn-sm btn-outline-secondary rounded-circle me-1" title="Historique">
                     <i class="fas fa-history"></i>
                 </a>
-                <button class="btn btn-sm btn-primary rounded-circle shadow-sm" 
+                {% comment %} <button class="btn btn-sm btn-primary rounded-circle shadow-sm" 
                         hx-get="{% url 'inventory:get-stock-form' product.pk %}" 
                         hx-target="closest .col-md-4"
                         hx-swap="innerHTML"
                         title="Ajuster le stock">
                     <i class="fas fa-plus-minus"></i>
-                </button>
+                </button> {% endcomment %}
             </div>
         </div>
     </div>

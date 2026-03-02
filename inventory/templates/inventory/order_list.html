@@ -18,9 +18,10 @@
                 </ol>
             </nav>
         </div>
-        <a href="{% url 'admin:inventory_supplierorder_add' %}" class="btn btn-primary rounded-pill px-4 shadow-sm  w-md-auto">
-            <i class="fas fa-plus me-2"></i>Passer une commande
-        </a>
+        
+        <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#orderModal">
+    <i class="fas fa-plus me-2"></i>Passer une commande
+</button>
     </div>
 
     <div class="row g-2 mb-4">
@@ -136,12 +137,35 @@
             <div class="row g-0 align-items-end">
                 <div class="col-6">
                     {% if order.status == 'recu' %}
-                                <span class="badge bg-success-subtle text-success border-0">Reçu {{ order.date_received|date:"d M" }}</span>
-                            {% else %}
-                                <span class="small {% if order.expected_date < now.date %}text-danger fw-bold{% else %}text-muted{% endif %}">
-                                    {{ order.expected_date|date:"d/m/y"|default:"-" }}
-                                </span>
-                            {% endif %}
+        {# Cas : Commande terminée #}
+        <div class="d-flex flex-column">
+            <span class="badge bg-success-subtle text-success border-0 w-fit">
+                <i class="fas fa-check-circle me-1"></i> Reçu le {{ order.date_received|date:"d M" }}
+            </span>
+        </div>
+
+    {% elif order.status == 'annule' %}
+        {# Cas : Commande annulée #}
+        <div class="d-flex flex-column">
+            <span class="badge bg-danger-subtle text-danger border-0 w-fit">
+                <i class="fas fa-times-circle me-1"></i> Annulé le {{ order.date_cancelled|date:"d M" }}
+            </span>
+        </div>
+
+    {% elif order.status == 'en_attente' %}
+        {# Cas : Brouillon / En attente #}
+        <small class="text-muted d-block" style="font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">Réception prévue le</small>
+        <span class="small {% if order.expected_date < now.date %}text-danger fw-bold{% else %}text-dark{% endif %}">
+            <i class="far fa-calendar-alt me-1"></i> {{ order.expected_date|date:"d/m/y"|default:"Non définie" }}
+        </span>
+
+    {% else %}
+        {# Cas : 'commande' (En route) #}
+        <small class="text-muted d-block" style="font-size: 0.65rem; font-weight: bold; text-transform: uppercase;">Attendu le</small>
+        <span class="small {% if order.expected_date < now.date %}text-danger fw-bold{% else %}text-primary fw-bold{% endif %}">
+            <i class="fas fa-truck me-1"></i> {{ order.expected_date|date:"d/m/y"|default:"-" }}
+        </span>
+    {% endif %}
                 </div>
                 <div class="col-6 text-end">
                     <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 0.55rem;">Montant Total</small>
@@ -165,4 +189,150 @@
 </div>  
 </div>
 </div>
+<!--modal passer une commande-->
+<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold"><i class="fas fa-shopping-cart me-2"></i>Nouvelle Commande Fournisseur</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'inventory:create-order' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-4 p-3 bg-light rounded-3 shadow-sm border">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary">FOURNISSEUR</label>
+                            <select name="supplier" class="form-select border-2" required>
+                                <option value="">Sélectionner...</option>
+                                {% for s in suppliers %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary">RÉCEPTION PRÉVUE</label>
+                            
+                            <input type="date" name="expected_date" class="form-control border-2" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-primary">STATUT INITIAL</label>
+                            <select name="status" class="form-select border-2">
+                            {% for status in status %}
+                                <option value="{{ status.0 }}">{{ status.1 }}</option>
+                            {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-muted">AUTEUR</label>
+                            <input type="text" class="form-control border-0 bg-white" value="{{ user.get_full_name|default:user.username }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-white text-muted" style="font-size: 0.75rem;">
+                                <tr>
+                                    <th>ARTICLE / PRODUIT</th>
+                                    <th style="width: 150px;">QUANTITÉ</th>
+                                    <th style="width: 200px;">PRIX UNITAIRE (F)</th>
+                                    <th style="width: 50px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderLinesContainer">
+                                <tr class="order-line">
+                                    <td>
+                                        <select name="product[]" class="form-select product-select" required>
+                                            <option value="">Choisir un article...</option>
+                                            {% for p in products %}
+                                            <option value="{{ p.id }}" data-price="{{ p.purchase_price }}">{{ p.name }} ({{ p.sku }})</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" name="quantity[]" class="form-control qty-input text-center" value="1" min="1"></td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="number" name="price[]" class="form-control price-input text-end">
+                                            <span class="input-group-text small">F</span>
+                                        </div>
+                                    </td>
+                                    <td><button type="button" class="btn btn-link text-danger remove-line p-0"><i class="fas fa-trash-alt"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button type="button" id="addLineBtn" class="btn btn-sm btn-outline-primary rounded-pill mt-3 px-3">
+                        <i class="fas fa-plus-circle me-1"></i> Ajouter une ligne
+                    </button>
+
+                    <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+                        <div class="text-end">
+                            <span class="text-muted small text-uppercase fw-bold d-block">Montant Total de la Commande</span>
+                            <h1 class="fw-bold text-primary mb-0" id="grandTotalDisplay">0 F</h1>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow">
+                        <i class="fas fa-check me-2"></i>Enregistrer la Commande
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderLines = document.getElementById('orderLines');
+    const addLineBtn = document.getElementById('addLine');
+    const grandTotalDisplay = document.getElementById('grandTotal');
+
+    // Calculer le total global
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.order-line').forEach(line => {
+            const qty = line.querySelector('.qty-input').value || 0;
+            const price = line.querySelector('.price-input').value || 0;
+            total += (parseFloat(qty) * parseFloat(price));
+        });
+        grandTotalDisplay.innerText = new Intl.NumberFormat().format(total) + " F";
+    }
+
+    // Ajouter une ligne
+    addLineBtn.addEventListener('click', function() {
+        const firstLine = document.querySelector('.order-line');
+        const newLine = firstLine.cloneNode(true);
+        newLine.querySelectorAll('input').forEach(i => i.value = "");
+        newLine.querySelector('.qty-input').value = 1;
+        orderLines.appendChild(newLine);
+    });
+
+    // Supprimer une ligne
+    orderLines.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-line')) {
+            const lines = document.querySelectorAll('.order-line');
+            if (lines.length > 1) {
+                e.target.closest('.order-line').remove();
+                calculateTotal();
+            }
+        }
+    });
+
+    // Écouter les changements pour mettre à jour les prix/totaux
+    orderLines.addEventListener('change', function(e) {
+        // Auto-remplissage du prix d'achat si le produit change
+        if (e.target.classList.contains('product-select')) {
+            const selectedOption = e.target.options[e.target.selectedIndex];
+            const price = selectedOption.getAttribute('data-price');
+            const row = e.target.closest('tr');
+            row.querySelector('.price-input').value = price;
+        }
+        calculateTotal();
+    });
+
+    orderLines.addEventListener('input', calculateTotal);
+});
+</script>
 {% endblock %}

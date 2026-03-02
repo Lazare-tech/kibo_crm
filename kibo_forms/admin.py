@@ -1,142 +1,158 @@
 from django.contrib import admin
-
 import csv
 import openpyxl
 from django.urls import reverse
-import json
-from .models import Form, Submission
-
 from django.utils.safestring import mark_safe
 from django.utils.html import format_html
 from django.http import HttpResponse
-# admin.site.register(Submission)
+from .models import Form, Submission
 
-############################################################################################
-@admin.action(description="Exporter les réponses sélectionnées en CSV")
+# --- 1. FONCTION DE RENDU UNIFIÉE (Pour les cartes) ---
+
+def get_answers_html(obj):
+    if not obj or not obj.answers_data:
+        return format_html('<span style="color: #999;">Aucune donnée.</span>')
+
+    container_id = f"grid-{obj.id}"
+    styles = f"""
+        <style>
+            #{container_id} {{
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 12px;
+                background: #f1f3f4;
+                padding: 15px;
+                border-radius: 8px;
+                border: 1px solid #dfe1e5;
+                margin-top: 10px;
+            }}
+            #{container_id} .card {{
+                background: white; border: 1px solid #dadce0;
+                border-radius: 6px; padding: 12px;
+                box-shadow: 0 1px 2px rgba(60,64,67,0.1);
+            }}
+            #{container_id} .label {{
+                font-size: 10px; color: #70757a;
+                text-transform: uppercase; font-weight: 700;
+                margin-bottom: 6px; display: block;
+            }}
+            #{container_id} .val {{
+                font-size: 13px; color: #202124;
+                word-break: break-word; display: block;
+            }}
+        </style>
+    """
+
+    cards_html = ""
+    # --- LA CORRECTION EST ICI ---
+    for key, value in obj.answers_data.items():
+        if key.startswith('_'): 
+            continue
+        
+        # Formatage de la valeur (Fichiers, Badges ou Texte)
+        if isinstance(value, list) and value and str(value[0]).startswith("http"):
+            val_display = "<br>".join([f'<a href="{v}" target="_blank" style="color:#1a73e8;text-decoration:underline;">📄 Fichier</a>' for v in value])
+        elif isinstance(value, list):
+            val_display = "".join([f'<span style="background:#e8f0fe;color:#1a73e8;padding:2px 8px;border-radius:12px;font-size:11px;margin:2px;display:inline-block;border:1px solid #d2e3fc;">{v}</span>' for v in value])
+        else:
+            val_display = str(value) if value else "—"
+
+        # On ajoute la carte à la chaîne finale (C'était cette ligne qui manquait)
+        cards_html += format_html(
+            '<div class="card"><span class="label">{}</span><span class="val">{}</span></div>',
+            key, mark_safe(val_display)
+        )
+
+    # Assemblage final
+    return mark_safe(f"{styles}<div id='{container_id}'>{cards_html}</div>")
+
+# --- 2. ACTIONS D'EXPORTATION ---
+
+@admin.action(description="Exporter en CSV")
 def export_submissions_csv(modeladmin, request, queryset):
-    # On prépare la réponse HTTP pour un téléchargement de fichier
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="export_kibo_forms.csv"'
-    
     writer = csv.writer(response)
-    
-    # On récupère toutes les clés (questions) du premier élément pour faire l'en-tête
     if queryset.exists():
-        first_submission = queryset.first()
-        headers = ['ID', 'Date de soumission'] + list(first_submission.answers_data.keys())
+        keys = set()
+        for sub in queryset: keys.update(sub.answers_data.keys())
+        headers = ['ID', 'Date'] + sorted([k for k in keys if not k.startswith('_')])
         writer.writerow(headers)
-        
-        # On remplit les lignes
         for obj in queryset:
             row = [obj.id, obj.submitted_at.strftime("%Y-%m-%d %H:%M")]
-            for key in first_submission.answers_data.keys():
-                # On récupère la réponse, si c'est une liste (cases à cocher), on la joint avec une virgule
+            for key in headers[2:]:
                 val = obj.answers_data.get(key, "")
-                if isinstance(val, list):
-                    val = ", ".join(map(str, val))
-                row.append(val)
+                row.append(", ".join(map(str, val)) if isinstance(val, list) else val)
             writer.writerow(row)
-            
     return response
-####################################
 
 @admin.action(description="Exporter en EXCEL (.xlsx)")
 def export_submissions_excel(modeladmin, request, queryset):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Réponses KIBO"
-
     if queryset.exists():
-        first_sub = queryset.first()
-        headers = ['ID', 'Formulaire', 'Date'] + list(first_sub.answers_data.keys())
+        keys = set()
+        for sub in queryset: keys.update(sub.answers_data.keys())
+        headers = ['ID', 'Formulaire', 'Date'] + sorted([k for k in keys if not k.startswith('_')])
         ws.append(headers)
-
-        # Style pour l'en-tête en gras
-        for cell in ws[1]:
-            cell.font = openpyxl.styles.Font(bold=True)
-
         for obj in queryset:
-            # On retire le fuseau horaire pour la compatibilité Excel
             date_str = obj.submitted_at.replace(tzinfo=None)
             row = [obj.id, obj.form.title, date_str]
-            for key in first_sub.answers_data.keys():
+            for key in headers[3:]:
                 val = obj.answers_data.get(key, "")
-                if isinstance(val, list): val = ", ".join(map(str, val))
-                row.append(val)
+                row.append(", ".join(map(str, val)) if isinstance(val, list) else val)
             ws.append(row)
-
-    response = HttpResponse(
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    )
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename="export_kibo.xlsx"'
     wb.save(response)
     return response
-####################################
+
+# --- 3. INLINE (Pour affichage dans la fiche Form) ---
+
+class SubmissionInline(admin.StackedInline): 
+    model = Submission
+    extra = 0
+    readonly_fields = ('submitted_at', 'render_answers')
+    fields = ('submitted_at', 'render_answers')
+    can_delete = True
+    show_change_link = True
+
+    def render_answers(self, obj):
+        return get_answers_html(obj)
+    render_answers.short_description = "Détail de la réponse"
+
+# --- 4. ADMIN POUR LES FORMULAIRES ---
+
 @admin.register(Form)
 class FormAdmin(admin.ModelAdmin):
-    list_display = ('title', 'nom','description', 'slug')
+    list_display = ('title', 'nom', 'get_submission_count', 'slug')
     readonly_fields = ('webhook_url_display',)
     prepopulated_fields = {'slug': ('title',)}
+    inlines = [SubmissionInline]
+
+    def get_submission_count(self, obj):
+        count = obj.submissions.count()
+        url = reverse('admin:kibo_forms_submission_changelist') + f'?form__id__exact={obj.id}'
+        return format_html('<a href="{}" style="font-weight:bold; color:#4285F4;">📊 Voir {} réponses</a>', url, count)
+    get_submission_count.short_description = "Total Réponses"
 
     def webhook_url_display(self, obj):
         if obj.id:
-            # Remplace par ton URL ngrok actuelle
             url = f"https://549a-102-23-40-244.ngrok-free.app/forms/webhook/{obj.slug}/"
-            return mark_safe(f'<code style="background: #eee; padding: 5px; border: 1px solid #ccc;">{url}</code>')
-        return "Enregistrez d'abord le formulaire pour voir l'URL"
-    
+            return mark_safe(f'<code style="background: #e8f0fe; padding: 5px; border: 1px solid #1a73e8; border-radius:4px;">{url}</code>')
+        return "Enregistrez d'abord pour voir l'URL"
     webhook_url_display.short_description = "URL du Webhook"
+
+# --- 5. ADMIN POUR LES SOUMISSIONS ---
 
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):
-    # On retire 'submitted_at' de list_display temporairement si l'erreur persiste
     list_display = ('id', 'form', 'submitted_at')
     list_filter = ('form', 'submitted_at')
     actions = [export_submissions_csv, export_submissions_excel]
-    readonly_fields = ('answers_data_formatted', 'submitted_at')
-    def answers_data_formatted(self, obj):
-        if not obj.answers_data:
-            return format_html('<span style="color: #999;">Aucune donnée.</span>')
-            
-        # 1. On prépare les styles CSS
-        th_style = "padding: 10px; border: 1px solid #ddd; background: #f1f1f1; font-size: 11px; text-transform: uppercase; color: #666;"
-        td_style = "padding: 10px; border: 1px solid #ddd; background: #fff; font-size: 13px; color: #333; min-width: 120px;"
+    readonly_fields = ('render_answers', 'submitted_at')
 
-        # 2. Construction du tableau
-        html = ['<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; text-align: left; border: 1px solid #ddd;">']
-        
-        # --- LIGNE DES EN-TÊTES (QUESTIONS) ---
-        html.append('<thead><tr>')
-        for key in obj.answers_data.keys():
-            if not key.startswith('_'):
-                html.append(f'<th style="{th_style}">{key}</th>')
-        html.append('</tr></thead>')
-
-        # --- LIGNE DES RÉPONSES ---
-        html.append('<tbody><tr>')
-        for key, value in obj.answers_data.items():
-            if key.startswith('_'): 
-                continue
-
-            html.append(f'<td style="{td_style}">')
-            
-            # Gestion des fichiers
-            if isinstance(value, list) and len(value) > 0 and str(value[0]).startswith("https://drive"):
-                for v in value:
-                    html.append(f'<a href="{v}" target="_blank" style="color: #264b5d; font-weight: bold; text-decoration: underline;">📄 Fichier</a><br>')
-            
-            # Gestion des listes (badges)
-            elif isinstance(value, list):
-                badges = "".join([f'<span style="background: #e1f5fe; color: #01579b; padding: 2px 5px; border-radius: 4px; font-size: 11px; margin-right: 3px; border: 1px solid #b3e5fc;">{v}</span>' for v in value])
-                html.append(badges)
-            
-            # Texte normal
-            else:
-                html.append(str(value) if value else "—")
-            
-            html.append('</td>')
-        
-        html.append('</tr></tbody></table></div>')
-        return format_html("".join(html))
-
-    answers_data_formatted.short_description = "Aperçu horizontal des données"
+    def render_answers(self, obj):
+        return get_answers_html(obj)
+    render_answers.short_description = "Détail des réponses"

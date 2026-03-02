@@ -214,11 +214,16 @@ def export_stock_pdf(request, pk):
                                                 #GESTION COMMANDES
 ##########################################################################################################
 @login_required
+
 def order_list(request):
-    # Correction : on utilise 'date_order' pour le tri et 'created_by' pour le select_related
+    # Optimisation : select_related pour le fournisseur, created_by
     orders = SupplierOrder.objects.select_related('supplier', 'created_by').all().order_by('-date_order')
     
-    # Statistiques basées sur tes STATUS_CHOICES réels
+    # INDISPENSABLE pour le Modal
+    suppliers = Supplier.objects.all().order_by('name')
+    products = Product.objects.all().order_by('name')
+    status = SupplierOrder.STATUS_CHOICES
+
     stats = {
         'total_pending': orders.filter(status='commande').count(),
         'total_waiting': orders.filter(status='en_attente').count(),
@@ -227,7 +232,10 @@ def order_list(request):
     
     return render(request, 'inventory/order_list.html', {
         'orders': orders,
+        'suppliers': suppliers,  # Ajouté
+        'products': products,    # Ajouté
         'stats': stats,
+        'status':status,
         'now': timezone.now() 
     })
 ################
@@ -327,3 +335,47 @@ def kibo_analytics(request):
         'now': today,
     }
     return render(request, 'inventory/analytics.html', context)
+###
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import SupplierOrder, OrderLine, Supplier, Product
+from django.db import transaction
+from django.utils.dateparse import parse_date
+
+@transaction.atomic
+def create_order(request):
+    if request.method == "POST":
+        supplier_id = request.POST.get('supplier')
+        status = request.POST.get('status')  # Récupère la valeur du select
+        expected_date_str = request.POST.get('expected_date')
+        
+        # Listes envoyées par le formulaire
+        product_ids = request.POST.getlist('product[]')
+        quantities = request.POST.getlist('quantity[]')
+        prices = request.POST.getlist('price[]')
+
+        if supplier_id and product_ids:
+            try:
+                # 1. Création de la commande parente
+                order = SupplierOrder.objects.create(
+                    supplier_id=supplier_id,
+                    expected_date=parse_date(expected_date_str) if expected_date_str else None,
+                    created_by=request.user,
+                    status=status # Utilise le choix du modal
+                )
+                
+                # 2. Création des lignes de commande
+                for i in range(len(product_ids)):
+                    if product_ids[i]: # On vérifie qu'un produit a été sélectionné
+                        OrderLine.objects.create(
+                            order=order,
+                            product_id=product_ids[i],
+                            quantity_ordered=quantities[i],
+                            unit_cost=prices[i]
+                        )
+                
+                messages.success(request, f"Commande {order.order_number} créée avec succès !")
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la création : {str(e)}")
+        
+        return redirect('inventory:order-list')

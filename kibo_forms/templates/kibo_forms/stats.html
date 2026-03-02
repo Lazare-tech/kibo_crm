@@ -23,36 +23,35 @@
     </div>
 
     <div class="row">
-        {% for stat in all_stats %}
-        <div class="col-12">
-            <div class="card kibo-analytics-card p-4 p-md-5">
-                <div class="mb-4">
-                    <h6 class="question-title mb-1">{{ stat.label }}</h6>
-                    <small class="text-muted">{{ total }} réponses</small>
-                </div>
+       {% for stat in all_stats %}
+<div class="stat-card" style="background: white; border-radius: 8px; border: 1px solid #dadce0; padding: 24px; margin-bottom: 20px; font-family: 'Roboto', Arial, sans-serif;">
+    
+    <h3 style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">{{ stat.label }}</h3>
+    <p style="color: #70757a; font-size: 14px; margin-bottom: 20px;">{{ total }} réponses</p>
 
-                <div class="row">
-                    {% if stat.display_type == 'text' %}
-                        <div class="col-12">
-                            <div class="d-flex flex-column">
-                                {% for item in stat.data|slice:":15" %}
-                                <div class="answer-item-box">
-                                    {{ item.answer_value|default:"(Vide)" }}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% else %}
-                        <div class="col-12">
-                            <div class="chart-holder">
-                                <canvas id="chart-{{ forloop.counter0 }}"></canvas>
-                            </div>
-                        </div>
-                    {% endif %}
+    {% if stat.display_type == 'paragraph' %}
+        <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+            {% for comment in stat.data %}
+                <div style="padding: 15px; background: #fff; border: 1px solid #dadce0; border-radius: 8px; margin-bottom: 12px; font-size: 14px; line-height: 1.5; color: #202124; box-shadow: 0 1px 2px rgba(60,64,67,0.3);">
+                    {{ comment|linebreaksbr }}
                 </div>
-            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+
+    {% elif stat.display_type == 'text' %}
+        <div style="background: #f8f9fa; border-radius: 4px; max-height: 250px; overflow-y: auto;">
+            {% for text in stat.data %}
+                <div style="padding: 12px; border-bottom: 1px solid #e0e0e0; font-size: 14px;">{{ text }}</div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <div style="height: 300px;">
+            <canvas id="chart-{{ forloop.counter0 }}"></canvas>
+        </div>
+    {% endif %}
+</div>
+{% endfor %}
     </div>
 </div>
 <script>
