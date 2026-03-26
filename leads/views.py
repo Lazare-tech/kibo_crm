@@ -8,6 +8,7 @@ from django.db.models import Q,Sum
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from datetime import date
+from django.contrib.auth import authenticate, login,logout
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 from .models import Invoice
@@ -319,3 +320,7 @@ def quick_create_client(request):
         """)
     
     return render(request, 'leads/partials/quick_client_modal.html')
+##
+
+def logout(request):
+    return redirect('leads:home')

@@ -17,16 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from django.contrib.auth import views as auth_views
+from django.conf import settings
+from django.conf.urls.static import static
 #
+import leads.views
 from leads.views import dashboard
 #
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path('', include('leads.urls', namespace='leads')),
+    path('dashboard/', include('leads.urls', namespace='leads')),
+    path('',include('mplace.urls',namespace='mplace')),
     path('inventory/', include('inventory.urls', namespace='inventory')),
     path('sales/', include('sales.urls', namespace='sales')),
-    path('forms/', include('kibo_forms.urls',namespace='kibo_forms')),
     ##
      path('login/', auth_views.LoginView.as_view(), name='login'),
-     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
-]
+]+   static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

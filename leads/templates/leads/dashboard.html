@@ -93,7 +93,7 @@
         <div class="input-group input-group-sm shadow-sm rounded-pill overflow-hidden bg-light" style="max-width: 100%; width: 300px;">
             <span class="input-group-text border-0 bg-light ps-3"><i class="fas fa-search text-muted small"></i></span>
             <input type="text" name="q" class="form-control border-0 bg-light" placeholder="Rechercher prospect..."
-                   hx-get="{% url 'leads:home' %}" hx-trigger="keyup changed delay:500ms" 
+                   hx-get="{% url 'leads:dashboard' %}" hx-trigger="keyup changed delay:500ms" 
                    hx-target="#lead-table-body" hx-indicator=".htmx-indicator">
         </div>
     </div>

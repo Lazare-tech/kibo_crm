@@ -1,0 +1,183 @@
+/* --- VARIABLES DE BRANDING JAGOPONT --- */
+:root {
+    --jago-navy: #00235B;
+    --jago-azure: #004bb3;
+    --jago-soft-bg: #f4f7f6;
+    --maxit-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+/* --- ANIMATIONS ET INTERACTIONS (UX) --- */
+
+/* Effet de pression sur les cartes (Maxit Style) */
+.maxit-card {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.maxit-card:active {
+    transform: scale(0.96);
+    background-color: #f0f3f5;
+}
+
+/* Barre de recherche flottante au scroll */
+.search-container-sticky {
+    position: sticky;
+    top: 70px;
+    z-index: 1020;
+    background-color: rgba(244, 247, 222, 0.8);
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
+}
+
+/* --- COMPOSANTS MOBILES --- */
+
+/* Badge de catégorie flottant sur l'image */
+.category-badge-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--jago-navy);
+    text-transform: uppercase;
+    box-shadow: var(--maxit-shadow);
+}
+
+/* Scroll Horizontal pour les villes (Filtres) */
+.scroll-filter-x {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 15px;
+    scrollbar-width: none; /* Firefox */
+}
+
+.scroll-filter-x::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.filter-pill {
+    white-space: nowrap;
+    border-radius: 25px;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid #dee2e6;
+    background: white;
+    color: #6c757d;
+    transition: 0.2s;
+}
+
+.filter-pill.active {
+    background-color: var(--jago-navy);
+    color: white;
+    border-color: var(--jago-navy);
+}
+
+/* Bouton flottant "Panier/Contact" style Maxit */
+.floating-action-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 60px;
+    height: 60px;
+    background: var(--jago-navy);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 25px rgba(0, 35, 91, 0.3);
+    z-index: 1050;
+    text-decoration: none;
+    font-size: 1.5rem;
+}
+
+/* Squelette de chargement (Skeleton Screen) */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+/* NAVBAR  */
+/* Style pour le menu actif */
+.nav-link.active {
+    color: #00235B !important;
+    position: relative;
+}
+
+/* Petite barre sous le menu actif sur Desktop */
+@media (min-width: 992px) {
+    .nav-link.active::after {
+        content: "";
+        position: absolute;
+        bottom: -5px;
+        left: 1rem;
+        right: 1rem;
+        height: 3px;
+        background-color: #00235B;
+        border-radius: 10px;
+    }
+}
+
+/* mobile disply  */
+/* --- CONFIGURATION DESKTOP (Par défaut) --- */
+.bottom-nav {
+    display: none; /* On cache la barre du bas sur ordi */
+}
+
+/* --- CONFIGURATION MOBILE (Écrans < 992px) --- */
+@media (max-width: 991.98px) {
+    body {
+        padding-bottom: 70px; /* Espace pour la barre du bas */
+        padding-top: 60px;    /* Espace pour la barre du haut */
+        background-color: #f8f9fa;
+    }
+
+    /* La Navbar du haut devient compacte (Image 3) */
+    .navbar-desktop {
+        display: none !important; 
+    }
+    
+    .navbar-mobile {
+        display: flex !important;
+    }
+
+    /* La barre du bas s'affiche (Image 2) */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background: white;
+        border-top: 1px solid #dee2e6;
+        z-index: 1050;
+        justify-content: space-around;
+        padding: 10px 0;
+    }
+}
+
+/* Style des icônes de la barre du bas */
+.bottom-nav a {
+    color: #6c757d;
+    text-decoration: none;
+    text-align: center;
+    font-size: 0.7rem;
+}
+.bottom-nav a.active {
+    color: #00235B; /* Ton Bleu JagoPoint */
+}
+.bottom-nav i {
+    display: block;
+    font-size: 1.4rem;
+    margin-bottom: 2px;
+}

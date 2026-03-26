@@ -1,0 +1,85 @@
+{% extends "baseplace.html" %}
+{% load humanize %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <div class="position-relative d-inline-block">
+            {% if boutique.logo %}
+                <img src="{{ boutique.logo.url }}" class="rounded-circle border border-4 border-white shadow mb-3" style="width: 100px; height: 100px; object-fit: cover;" alt="{{ boutique.nom }}">
+            {% else %}
+                <img src="https://via.placeholder.com/100/00235B/ffffff?text={{ boutique.nom|slice:':1' }}" class="rounded-circle border border-4 border-white shadow mb-3" alt="Logo">
+            {% endif %}
+            
+            <span class="position-absolute bottom-0 end-0 bg-success border border-white rounded-circle p-2" title="Boutique Active"></span>
+        </div>
+        
+        <h4 class="fw-bold mb-1" style="color: #00235B;">{{ boutique.nom }}</h4>
+        <div class="d-flex justify-content-center gap-2 align-items-center">
+            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+                <i class="fas fa-map-marker-alt me-1"></i>{{ boutique.ville }}
+            </span>
+            <span class="small text-muted fw-bold">{{ produits.count }} PRODUITS</span>
+        </div>
+        
+        {% if boutique.description %}
+            <p class="text-muted mt-3 mx-auto small" style="max-width: 600px;">{{ boutique.description }}</p>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        <form method="GET">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 rounded-pill-start ps-3 border-2">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" class="form-control border-start-0 rounded-pill-end border-2 shadow-none" placeholder="Chercher un article dans {{ boutique.nom }}...">
+            </div>
+        </form>
+    </div>
+
+    <h6 class="fw-bold border-bottom pb-2 mb-4" style="color: #00235B;">Catalogue des produits</h6>
+    
+    <div class="row g-3">
+        {% for produit in produits %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <div class="maxit-card border overflow-hidden bg-white h-100 d-flex flex-column">
+                <div class="position-relative">
+                    {% if produit.image %}
+                        <img src="{{ produit.image.url }}" class="img-fluid w-100" style="height: 200px; object-fit: cover;" alt="{{ produit.nom }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/400x300/eef4ff/00235B?text={{ produit.nom|truncatechars:10 }}" class="img-fluid" alt="Placeholder">
+                    {% endif %}
+                    
+                    <div class="position-absolute bottom-0 end-0 bg-white px-2 py-1 m-2 rounded-2 shadow-sm">
+                        <span class="fw-bold text-primary small">{{ produit.prix|intcomma }} F</span>
+                    </div>
+                </div>
+
+                <div class="p-3 text-center flex-grow-1 d-flex flex-column justify-content-between">
+                    <div>
+                        <small class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: 0.65rem;">
+                            {{ produit.categorie.nom|default:"Général" }}
+                        </small>
+                        <h6 class="fw-bold mb-2 text-dark" style="font-size: 0.9rem;">{{ produit.nom }}</h6>
+                    </div>
+                    
+                    <a href="https://wa.me/226XXXXXXXX?text=Bonjour, je suis intéressé par votre produit : {{ produit.nom }}" target="_blank" class="btn btn-outline-success btn-sm rounded-pill w-100 mt-2">
+                        <i class="fab fa-whatsapp me-1"></i> Commander
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170577.png" width="80" class="opacity-25 mb-3" alt="Vide">
+            <p class="text-muted">Aucun produit disponible pour le moment dans cette boutique.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<a href="{% url 'mplace:market' %}" class="btn btn-jago rounded-circle d-md-none position-fixed bottom-0 start-0 m-4 shadow-lg" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <i class="fas fa-arrow-left"></i>
+</a>
+{% endblock %}

@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'leads',
     'inventory',
     'sales',
-    'kibo_forms',
+    'mplace',
     'django.contrib.humanize',
 ]
 
@@ -71,6 +71,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                    'mplace.context_processors.categories_processor',
+
             ],
         },
     },
@@ -134,7 +136,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "/")
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # --- CONFIGURATION UI ---
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -150,7 +152,7 @@ NUMBER_GROUPING = 3
 # --- AUTHENTIFICATION ---
 LOGIN_REDIRECT_URL = '/'
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/home/'
 
 ###
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

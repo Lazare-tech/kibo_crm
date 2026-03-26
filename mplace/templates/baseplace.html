@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>JagoPoint | Marketplace</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    
+     <link rel="stylesheet" href="{% static 'css/fontawesome-free/fontawesome.css' %}">
+
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/placestyle/placestyle.css' %}">
+
+    <style>
+        :root {
+            --jago-dark: #00235B;
+            --jago-cobalt: #004bb3;
+            --jago-light: #f4f7f6;
+            --white: #ffffff;
+        }
+
+        body { 
+            background-color: var(--jago-light); 
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            margin: 0;
+            transition: padding 0.3s ease;
+        }
+
+        /* --- CONFIGURATION MOBILE (Maxit Style) --- */
+        @media (max-width: 991.98px) {
+            body { 
+                padding-top: 60px;    /* Espace pour la TopBar image 3 */
+                padding-bottom: 75px; /* Espace pour la BottomBar image 2 */
+            }
+            
+            .navbar-desktop { display: none !important; }
+            .navbar-mobile-top { display: flex !important; }
+            .bottom-nav-bar { display: flex !important; }
+        }
+
+        /* --- CONFIGURATION DESKTOP --- */
+        @media (min-width: 992px) {
+            .navbar-mobile-top, .bottom-nav-bar { display: none !important; }
+            .navbar-desktop { display: flex !important; }
+        }
+
+        /* Styles UI */
+        .maxit-card { 
+            border: none; 
+            border-radius: 16px; 
+            transition: transform 0.2s; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        }
+        
+        .btn-jago { 
+            background-color: var(--jago-dark); 
+            color: white; 
+            border-radius: 12px; 
+            font-weight: 600;
+        }
+
+        /* Bottom Nav Styling (Image 2) */
+        .bottom-nav-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--white);
+            height: 70px;
+            border-top: 1px solid #e0e0e0;
+            display: none;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1050;
+        }
+
+        .bottom-nav-item {
+            text-align: center;
+            color: #6c757d;
+            text-decoration: none;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .bottom-nav-item i {
+            display: block;
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+        }
+
+        .bottom-nav-item.active { color: var(--jago-dark); }
+
+        /* Bouton Central (+) */
+        .nav-add-btn {
+            background: var(--jago-dark);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -35px;
+            border: 5px solid var(--jago-light);
+            box-shadow: 0 4px 10px rgba(0,35,91,0.2);
+            color: white !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    {% include 'mplace/navbar/navbar.html' %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="bottom-nav-bar shadow-lg">
+        <a href="{% url 'mplace:home' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Accueil</span>
+        </a>
+        <a href="#" class="bottom-nav-item">
+            <i class="fas fa-th-large"></i>
+            <span>Catégories</span>
+        </a>
+        
+        <a href="#" class="bottom-nav-item nav-add-btn">
+            <i class="fas fa-plus"></i>
+        </a>
+
+        <a href="{% url 'mplace:market' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'market_list' %}active{% endif %}">
+            <i class="fas fa-store"></i>
+            <span>Market</span>
+        </a>
+        <a href="{% url 'mplace:contact' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'contact' %}active{% endif %}">
+            <i class="fas fa-user-friends"></i>
+            <span>Contact</span>
+        </a>
+    </nav>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
