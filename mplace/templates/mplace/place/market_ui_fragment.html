@@ -1,0 +1,37 @@
+<div class="mb-4">
+    <h6 class="fw-bold px-1 mb-3" style="color: #00235B;">Explorer par catégorie</h6>
+    <div class="d-flex overflow-auto pb-2" style="gap: 10px; scrollbar-width: none;">
+        <a href="{% url 'mplace:market' %}" hx-get="{% url 'mplace:market' %}" hx-target="#market-ui" hx-push-url="true" class="text-decoration-none">
+            <div class="px-3 py-2 rounded-pill border {% if not current_cat %}bg-primary text-white{% else %}bg-white text-dark{% endif %}">Tous</div>
+        </a>
+        {% for cat in categories %}
+        <a href="{% url 'mplace:market' %}?cat={{ cat.slug }}" 
+           hx-get="{% url 'mplace:market' %}?cat={{ cat.slug }}" 
+           hx-target="#market-ui" 
+           hx-push-url="true" class="text-decoration-none">
+            <div class="px-3 py-2 rounded-pill border {% if current_cat == cat.slug %}bg-primary text-white{% else %}bg-white text-dark{% endif %}">
+                {{ cat.nom }}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+ <div class="row mb-4">
+        <div class="col-12">
+            <div class="search-container border shadow-sm rounded-pill p-2 bg-white d-flex align-items-center">
+                <i class="fas fa-search text-muted ms-3"></i>
+                <input type="text" name="q" value="{{ query }}" 
+                       class="form-control border-0 shadow-none fs-6" 
+                       placeholder="Rechercher..."
+                       hx-get="{% url 'mplace:market' %}" 
+                       hx-trigger="keyup changed delay:500ms" 
+                       hx-target="#market-ui" 
+                       hx-indicator=".search-spinner"
+                       hx-push-url="true">
+                <div class="spinner-border spinner-border-sm text-primary me-2 search-spinner htmx-indicator" role="status"></div>
+            </div>
+        </div>
+    </div>
+<div id="seller-grid">
+   {% include "mplace/place/market_list.html" %}
+</div>

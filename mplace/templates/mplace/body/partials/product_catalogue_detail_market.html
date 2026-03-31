@@ -1,0 +1,37 @@
+{% load humanize %}
+<div class="row g-3" id="shop-catalog">
+    {% for produit in produits %}
+    <div class="col-6 col-md-3"> <div class="card maxit-card h-100 border-0 shadow-sm position-relative overflow-hidden">
+            
+            {% if produit.categorie %}
+            <span class="category-badge-overlay" style="font-size: 0.65rem; padding: 3px 8px;">
+                {{ produit.categorie.nom|upper }}
+            </span>
+            {% endif %}
+
+            <img src="{% if produit.image %}{{ produit.image.url }}{% else %}https://via.placeholder.com/300/eef4ff/00235B?text={{ produit.nom|truncatechars:10 }}{% endif %}" 
+                 class="card-img-top p-2 rounded-4" 
+                 style="height: 150px; object-fit: cover;" 
+                 alt="{{ produit.nom }}">
+
+            <div class="card-body p-2 d-flex flex-column">
+                <h6 class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.85rem;">{{ produit.nom }}</h6>
+                
+                <div class="mt-auto d-flex justify-content-between align-items-center">
+                    <span class="text-primary fw-bold" style="font-size: 0.9rem;">
+                        {{ produit.prix|intcomma }} <small>F</small>
+                    </span>
+                    <button class="btn btn-sm btn-jago rounded-3 p-1 px-2">
+                        <i class="fas fa-cart-plus fa-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <i class="fas fa-search fa-3x text-muted opacity-25 mb-3"></i>
+        <p class="text-muted">Aucun produit ne correspond à votre recherche dans cette boutique.</p>
+    </div>
+    {% endfor %}
+</div>

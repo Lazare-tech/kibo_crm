@@ -1,0 +1,41 @@
+<div class="mb-4">
+    <h6 class="fw-bold px-1 mb-3" style="color: #00235B;">Explorer par catégorie</h6>
+    <div class="d-flex overflow-auto pb-2" style="gap: 10px; scrollbar-width: none;">
+        
+        <a href="{% url 'mplace:market' %}" 
+           hx-get="{% url 'mplace:market' %}" 
+           hx-target="#market-ui" 
+           hx-push-url="true" class="text-decoration-none">
+            <div class="px-3 py-2 rounded-pill border shadow-sm small fw-bold {% if not current_cat %}bg-primary text-white border-primary{% else %}bg-white text-dark{% endif %}">
+                Tous
+            </div>
+        </a>
+
+        {% for cat in categories %}
+        <a href="{% url 'mplace:market' %}?cat={{ cat.slug }}" 
+           hx-get="{% url 'mplace:market' %}?cat={{ cat.slug }}" 
+           hx-target="#market-ui" 
+           hx-push-url="true"
+           class="text-decoration-none">
+            <div class="px-3 py-2 rounded-pill border shadow-sm small fw-bold {% if current_cat == cat.slug %}bg-primary text-white border-primary{% else %}bg-white text-dark{% endif %}" style="white-space: nowrap;">
+                <i class="fas fa-tag me-1 {% if current_cat == cat.slug %}text-white{% else %}text-primary{% endif %}"></i> 
+                {{ cat.nom }}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
+<h5 class="fw-bold mb-3 px-1" style="color: #00235B;">
+    {% if query %} 
+        Résultats pour "{{ query }}" 
+    {% elif current_cat %}
+        Catégorie : <span class="text-primary">{{ current_cat|capfirst }}</span>
+    {% else %} 
+        Tous les Produits 
+    {% endif %}
+</h5>
+
+<div id="seller-grid">
+   {% include "mplace/place/market_list.html" %}
+</div>

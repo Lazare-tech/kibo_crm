@@ -3,14 +3,14 @@
 from django.urls import path
 
 import leads.views 
-
+from django.contrib.auth import views as auth_views
+from . import views
+##
 
 app_name = 'leads'
 urlpatterns = [
     path('dashboard', leads.views.dashboard, name='dashboard'),
-    path('logout/', leads.views.logout, name='logout'),
-
-###
+ ###
     path('create/', leads.views.lead_create, name='lead-create'), 
     path('update/<int:pk>/', leads.views.lead_update, name='lead-update'), # <int:pk> capture l'ID
     path('delete/<int:pk>/', leads.views.lead_delete, name='lead-delete'),

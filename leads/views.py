@@ -5,7 +5,7 @@ from .forms import LeadModelForm,NoteModelForm,DealModelForm,TaskModelForm,Invoi
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.db.models import Q,Sum
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Count
 from datetime import date
 from django.contrib.auth import authenticate, login,logout
@@ -13,8 +13,11 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 from .models import Invoice
 # Create your views here.
+def is_staff_member(user):
+    return user.is_staff # Ou verifier un groupe "Commerçants"
 
 @login_required
+@user_passes_test(is_staff_member, login_url='mplace:home')
 def dashboard(request):
     # Statistiques Financières (Invoices)
     total_encaisse = Invoice.objects.filter(status='payee').aggregate(Sum('amount'))['amount__sum'] or 0
@@ -321,6 +324,3 @@ def quick_create_client(request):
     
     return render(request, 'leads/partials/quick_client_modal.html')
 ##
-
-def logout(request):
-    return redirect('leads:home')

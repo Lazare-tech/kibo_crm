@@ -150,9 +150,8 @@ NUMBER_GROUPING = 3
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 # --- AUTHENTIFICATION ---
-LOGIN_REDIRECT_URL = '/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/home/'
+LOGIN_REDIRECT_URL = 'mplace:home'
+LOGOUT_REDIRECT_URL = 'mplace:home'
 
 ###
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

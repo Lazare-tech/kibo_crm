@@ -9,46 +9,69 @@
         </button>
 
         <div class="collapse navbar-collapse" id="jagoNav">
-            <ul class="navbar-nav ms-auto fw-medium">
-                
+            <ul class="navbar-nav ms-auto fw-medium align-items-center">
                 <li class="nav-item">
-                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'home' %}active text-primary fw-bold{% endif %}" 
-                       href="{% url 'mplace:home' %}">
-                        Accueil
-                    </a>
+                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'home' %}active text-primary fw-bold{% endif %}" href="{% url 'mplace:home' %}">Accueil</a>
                 </li>
 
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle px-3" href="#" id="catDrop" role="button" data-bs-toggle="dropdown">
-                        Catégories
-                    </a>
+                    <a class="nav-link dropdown-toggle px-3" href="#" id="catDrop" role="button" data-bs-toggle="dropdown">Catégories</a>
                     <ul class="dropdown-menu border-0 shadow-lg p-2 rounded-4 mt-2">
                         {% for cat in all_categories %}
-                            <li>
-                                <a class="dropdown-item rounded-3 py-2 {% if request.GET.cat == cat.slug %}bg-primary text-white{% endif %}" 
-                                   href="{% url 'mplace:home' %}?cat={{ cat.slug }}">
-                                    {{ cat.nom }}
-                                </a>
-                            </li>
-                        {% empty %}
-                            <li><span class="dropdown-item disabled text-muted italic">Aucune catégorie</span></li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" href="{% url 'mplace:home' %}?cat={{ cat.slug }}" hx-get="{% url 'mplace:home' %}?cat={{ cat.slug }}" hx-target="#product-grid" hx-push-url="true">{{ cat.nom }}</a>
+                        </li>
                         {% endfor %}
                     </ul>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'market' or request.resolver_match.url_name == 'detail_market' %}active text-primary fw-bold{% endif %}" 
-                       href="{% url 'mplace:market' %}">
-                        Marketplace
-                    </a>
+                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'market' %}active text-primary fw-bold{% endif %}" href="{% url 'mplace:market' %}">Marketplace</a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'contact' %}active text-primary fw-bold{% endif %}" 
-                       href="{% url 'mplace:contact' %}">
-                        Contact
-                    </a>
+                    <a class="nav-link px-3 {% if request.resolver_match.url_name == 'contact' %}active text-primary fw-bold{% endif %}" href="{% url 'mplace:contact' %}">Contact</a>
                 </li>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown ms-lg-3">
+                        <a class="nav-link dropdown-toggle btn btn-light rounded-pill px-3 border shadow-sm" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1 text-primary"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 mt-2 p-2" style="min-width: 200px;">
+                            <li class="px-3 py-2">
+                                <small class="text-muted d-block">Connecté en tant que</small>
+                                <span class="fw-bold">{{ user.email|default:user.username }}</span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            {% if user.is_staff or user.is_superuser %}
+                            <li>
+                                <a class="dropdown-item rounded-3 py-2 fw-bold text-primary" href="{% url 'leads:dashboard' %}">
+                                    <i class="fas fa-chart-line me-2"></i>Mon Dashboard ERP
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{% url 'mplace:logout' %}" method="post" class="m-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item rounded-3 py-2 text-danger fw-bold">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <a class="btn btn-outline-primary rounded-pill px-4 border-2 fw-bold" href="{% url 'mplace:login' %}">Connexion</a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                        <a class="btn btn-jago rounded-pill px-4 fw-bold shadow-sm" href="{% url 'mplace:register' %}">S'inscrire</a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     </div>
