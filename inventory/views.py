@@ -5,6 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 
+from accounts.decorators import role_required
 from sales.models import Sale
 from .forms import StockAdjustmentForm
 from .models import Product, Category,Supplier,SupplierOrder
@@ -21,15 +22,23 @@ from inventory import models
 # Create your views here.
 
 @login_required
+@role_required(allowed_roles=['stock', 'admin'])
 def product_list(request):
-    products = Product.objects.all().order_by('name')
-    categories = Category.objects.all()
+    user_boutique = request.user.profile.boutique
+    # products = Product.objects.all().order_by('name')
+    # categories = Category.objects.all()
+    products = Product.objects.filter(boutique=user_boutique).order_by('name')
+    categories = Category.objects.filter(boutique=user_boutique)
     #
     # Statistiques pour les graphiques
     # Calcul des sorties totales par produit
+    # for product in products:
+    #     product.total_sales = product.movements.filter(movement_type='sortie').aggregate(Sum('quantity'))['quantity__sum'] or 0
     for product in products:
-        product.total_sales = product.movements.filter(movement_type='sortie').aggregate(Sum('quantity'))['quantity__sum'] or 0
-    # Statistiques simples
+        product.total_sales = product.movements.filter(
+            movement_type='sortie'
+        ).aggregate(Sum('quantity'))['quantity__sum'] or 0
+    # # Statistiques simples
     total_products = products.count()
     low_stock_count = sum(1 for p in products if p.is_low_stock)
     ##
@@ -42,9 +51,13 @@ def product_list(request):
           'products': products,
         'categories': categories,
         'total_products': total_products,
+        # 'low_stock_count': sum(1 for p in products if p.is_low_stock),
+        # 'low_stock_count': sum(1 for p in products if p.is_low_stock),
         'low_stock_count': sum(1 for p in products if p.is_low_stock),
-        'top_labels': top_labels,
-        'top_data': top_data,
+        # 'top_labels': top_labels,
+        'top_labels': [p.name for p in sorted(products, key=lambda x: x.total_sales, reverse=True)[:5]],
+        # 'top_data': top_data,
+        'top_data': [p.total_sales for p in sorted(products, key=lambda x: x.total_sales, reverse=True)[:5]],
     
     }
     return render(request, 'inventory/product_list.html', context)
@@ -90,15 +103,18 @@ def stock_history(request, pk):
     }
     return render(request, 'inventory/stock_history.html', context)
 @login_required
-@login_required
+@role_required(allowed_roles=['stock', 'admin'])
 def all_stock_history(request):
+    user_boutique = request.user.profile.boutique
+    
+    # On filtre les mouvements par boutique
+    movements = StockMovement.objects.filter(boutique=user_boutique).select_related('product', 'user').order_by('-date')
     # 1. Préparation des dates pour les stats fixes
     today = timezone.now().date()
     start_of_week = today - timedelta(days=today.weekday())
     start_of_month = today.replace(day=1)
 
     # 2. Initialisation du QuerySet (On le crée d'abord !)
-    movements = StockMovement.objects.select_related('product', 'user').all().order_by('-date')
 
     # 3. Récupération des filtres depuis la requête GET
     start_date = request.GET.get('start_date')
@@ -115,9 +131,11 @@ def all_stock_history(request):
         movements = movements.filter(product__name__icontains=search_query)
 
     # 5. Calcul des stats (On utilise un QuerySet séparé pour que les cartes restent fixes)
-    all_outs = StockMovement.objects.filter(movement_type='sortie')
+    # all_outs = StockMovement.objects.filter(movement_type='sortie')
+    all_outs = StockMovement.objects.filter(boutique=user_boutique, movement_type='sortie')
     stats = {
-        'out_today': all_outs.filter(date__date=today).aggregate(Sum('quantity'))['quantity__sum'] or 0,
+        'out_today': all_outs.filter(date__date=timezone.now().date()).aggregate(Sum('quantity'))['quantity__sum'] or 0,
+        # 'out_today': all_outs.filter(date__date=today).aggregate(Sum('quantity'))['quantity__sum'] or 0,
         'out_week': all_outs.filter(date__date__gte=start_of_week).aggregate(Sum('quantity'))['quantity__sum'] or 0,
         'out_month': all_outs.filter(date__date__gte=start_of_month).aggregate(Sum('quantity'))['quantity__sum'] or 0,
     }
@@ -144,9 +162,48 @@ def get_stock_form(request, pk):
     return render(request, 'inventory/partials/stock_form.html', context)
 
 ###
+# @login_required
+# def adjust_stock_htmx(request, pk):
+#     product = get_object_or_404(Product, pk=pk)
+#     if request.method == 'POST':
+#         qty = int(request.POST.get('quantity'))
+#         m_type = request.POST.get('movement_type')
+#         reason = request.POST.get('reason')
+        
+#         try:
+#             with transaction.atomic():
+#                 # On valide d'abord la sortie
+#                 if m_type == 'sortie' and product.quantity < qty:
+#                     return HttpResponse("⚠️ Stock insuffisant !", status=400)
+                
+#                 # Création du mouvement
+#                 StockMovement.objects.create(
+#                     product=product,
+#                     quantity=qty,
+#                     movement_type=m_type,
+#                     reason=reason
+#                 )
+                
+#                 # Mise à jour du produit
+#                 if m_type == 'entree':
+#                     product.quantity += qty
+#                 else:
+#                     product.quantity -= qty
+#                 product.save()
+                
+#         except Exception as e:
+#             return HttpResponse(f"Erreur : {str(e)}", status=500)
+#     context={
+#         'product': product
+#     }        
+#     return render(request, 'inventory/partials/product_card_inner.html', context)
 @login_required
+@role_required(allowed_roles=['stock', 'admin'])
 def adjust_stock_htmx(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    user_boutique = request.user.profile.boutique
+    # Sécurité : get_object_or_404 avec la boutique en paramètre
+    product = get_object_or_404(Product, pk=pk, boutique=user_boutique)
+    
     if request.method == 'POST':
         qty = int(request.POST.get('quantity'))
         m_type = request.POST.get('movement_type')
@@ -154,19 +211,19 @@ def adjust_stock_htmx(request, pk):
         
         try:
             with transaction.atomic():
-                # On valide d'abord la sortie
                 if m_type == 'sortie' and product.quantity < qty:
                     return HttpResponse("⚠️ Stock insuffisant !", status=400)
                 
-                # Création du mouvement
+                # Création du mouvement lié à la boutique
                 StockMovement.objects.create(
                     product=product,
+                    boutique=user_boutique, # <--- Liaison boutique
+                    user=request.user,
                     quantity=qty,
                     movement_type=m_type,
                     reason=reason
                 )
                 
-                # Mise à jour du produit
                 if m_type == 'entree':
                     product.quantity += qty
                 else:
@@ -175,10 +232,8 @@ def adjust_stock_htmx(request, pk):
                 
         except Exception as e:
             return HttpResponse(f"Erreur : {str(e)}", status=500)
-    context={
-        'product': product
-    }        
-    return render(request, 'inventory/partials/product_card_inner.html', context)
+            
+    return render(request, 'inventory/partials/product_card_inner.html', {'product': product})
 ###
 @login_required
 def get_product_card(request, pk):
@@ -214,14 +269,19 @@ def export_stock_pdf(request, pk):
                                                 #GESTION COMMANDES
 ##########################################################################################################
 @login_required
-
+@role_required(allowed_roles=['stock', 'admin'])
 def order_list(request):
+    user_boutique = request.user.profile.boutique
     # Optimisation : select_related pour le fournisseur, created_by
-    orders = SupplierOrder.objects.select_related('supplier', 'created_by').all().order_by('-date_order')
+    # orders = SupplierOrder.objects.select_related('supplier', 'created_by').all().order_by('-date_order')
     
-    # INDISPENSABLE pour le Modal
-    suppliers = Supplier.objects.all().order_by('name')
-    products = Product.objects.all().order_by('name')
+    # # INDISPENSABLE pour le Modal
+    # suppliers = Supplier.objects.all().order_by('name')
+    # products = Product.objects.all().order_by('name')
+    # Isolation des commandes et fournisseurs
+    orders = SupplierOrder.objects.filter(boutique=user_boutique).select_related('supplier', 'created_by').order_by('-date_order')
+    suppliers = Supplier.objects.filter(boutique=user_boutique).order_by('name')
+    products = Product.objects.filter(boutique=user_boutique).order_by('name')
     status = SupplierOrder.STATUS_CHOICES
 
     stats = {

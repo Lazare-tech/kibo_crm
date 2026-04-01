@@ -1,5 +1,6 @@
 from datetime import timezone
 from django.shortcuts import render, get_object_or_404,redirect
+from accounts.decorators import role_required
 from inventory import models
 from inventory.models import Product
 from .models import Sale, SaleItem
@@ -16,19 +17,35 @@ from django.db.models import Sum
 # Create your views here.
 
 
+# @login_required
+# def pos_interface(request):
+#     products = Product.objects.filter(quantity__gt=0) # On ne montre que ce qui est disponible
+#     categories = Category.objects.all()
+#     #
+#     clients = Client.objects.all()
+#     print(
+#         "clients",clients
+#     )
+#     context={
+#         'products':products,
+#         'categories':categories,
+#         'clients':clients
+#     }
+#     return render(request, 'sales/pos_interface.html', context)
 @login_required
+@role_required(allowed_roles=['vendeur', 'admin']) # Utilise le décorateur créé précédemment
 def pos_interface(request):
-    products = Product.objects.filter(quantity__gt=0) # On ne montre que ce qui est disponible
-    categories = Category.objects.all()
-    #
-    clients = Client.objects.all()
-    print(
-        "clients",clients
-    )
-    context={
-        'products':products,
-        'categories':categories,
-        'clients':clients
+    user_boutique = request.user.profile.boutique
+    
+    # Isolation : Uniquement les produits de MA boutique
+    products = Product.objects.filter(boutique=user_boutique, quantity__gt=0)
+    categories = Category.objects.filter(boutique=user_boutique)
+    clients = Client.objects.filter(boutique=user_boutique)
+    
+    context = {
+        'products': products,
+        'categories': categories,
+        'clients': clients
     }
     return render(request, 'sales/pos_interface.html', context)
 
@@ -47,8 +64,11 @@ def add_to_cart(request, product_id):
 @transaction.atomic
 def validate_sale(request):
     if request.method == 'POST':
-        # ... (tes récupérations de données restent les mêmes) ...
+        user_boutique = request.user.profile.boutique
         client_id = request.POST.get('client_id')
+        # ... (tes récupérations de données restent les mêmes) ...
+        # client_id = request.POST.get('client_id')
+        client = get_object_or_404(Client, id=client_id, boutique=user_boutique)
         product_ids = request.POST.getlist('product_ids[]')
         quantities = request.POST.getlist('quantities[]')
         prices = request.POST.getlist('prices[]')
@@ -60,6 +80,7 @@ def validate_sale(request):
         try:
             # 1. Créer la vente
             sale = Sale.objects.create(
+                boutique=user_boutique, # <--- IMPORTANT : ajouter ce champ au modèle Sale
                 client_id=client_id,
                 total_amount=total_amount,
                 amount_paid=0,
@@ -70,7 +91,8 @@ def validate_sale(request):
             from inventory.models import StockMovement # Import local pour éviter les imports circulaires
             
             for p_id, qty, price in zip(product_ids, quantities, prices):
-                product = Product.objects.get(id=p_id)
+                # product = Product.objects.get(id=p_id)
+                product = get_object_or_404(Product, id=p_id, boutique=user_boutique)
                 qty_int = int(qty)
                 clean_price = str(price).replace('\xa0', '').replace(' ', '').replace(',', '.')
 
@@ -88,6 +110,7 @@ def validate_sale(request):
                 # CRUCIAL : On crée le mouvement de stock ICI avec request.user
                 StockMovement.objects.create(
                     product=product,
+                    boutique=user_boutique, # Lier aussi le mouvement à la boutique
                     quantity=qty_int,
                     movement_type='sortie',
                     reason=f"Vente {sale.sale_number}",
@@ -333,12 +356,25 @@ def update_payment_status(self):
         status=self.status
     )
 ###
+# @login_required
+# def debt_list(request):
+#     # On filtre les ventes non totalement payées
+#     debts = Sale.objects.exclude(status='paye').order_by('-date')
+    
+#     # Calcul du total des créances dehors
+#     total_debt = sum(s.balance_due for s in debts)
+    
+#     return render(request, 'sales/debt_list.html', {
+#         'debts': debts,
+#         'total_debt': total_debt
+#     })
 @login_required
 def debt_list(request):
-    # On filtre les ventes non totalement payées
-    debts = Sale.objects.exclude(status='paye').order_by('-date')
+    user_boutique = request.user.profile.boutique
     
-    # Calcul du total des créances dehors
+    # Uniquement les ventes impayées de MA boutique
+    debts = Sale.objects.filter(boutique=user_boutique).exclude(status='paye').order_by('-date')
+    
     total_debt = sum(s.balance_due for s in debts)
     
     return render(request, 'sales/debt_list.html', {

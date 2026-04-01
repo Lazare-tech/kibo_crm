@@ -3,7 +3,9 @@ from django.db import models
 # Create your models here.
 from django.db import models
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
+#
 class Categorie(models.Model):
     nom = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, blank=True)
@@ -17,10 +19,12 @@ class Categorie(models.Model):
         return self.nom
 
 class Boutique(models.Model):
+    admin = models.OneToOneField(User, on_delete=models.CASCADE, related_name='ma_boutique')
     nom = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     ville = models.CharField(max_length=100)
     logo = models.ImageField(upload_to='boutiques/logos/', blank=True, null=True)
+    is_active = models.BooleanField(default=False) # <--- AJOUTE ÇA : C'est le verrou du Boss
     slug = models.SlugField(unique=True, blank=True)
 
     def save(self, *args, **kwargs):
@@ -28,8 +32,10 @@ class Boutique(models.Model):
             self.slug = slugify(self.nom)
         super().save(*args, **kwargs)
 
+    
     def __str__(self):
-        return self.nom
+        status = "✅" if self.is_active else "⏳"
+        return f"{status} {self.nom}"
 
 class ProduitMarket(models.Model):
     boutique = models.ForeignKey(Boutique, on_delete=models.CASCADE, related_name='produits')

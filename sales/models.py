@@ -15,7 +15,7 @@ class Sale(models.Model):
         ('partiel', 'Partiellement payé'),
         ('paye', 'Payé'),
     )
-
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name='ventes')
     sale_number = models.CharField(max_length=20, unique=True, editable=False)
     client = models.ForeignKey('leads.Client', on_delete=models.CASCADE, related_name="sales", verbose_name="Client")
     date = models.DateTimeField(auto_now_add=True, verbose_name="Date de vente")

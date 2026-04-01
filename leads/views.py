@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+
+from accounts.decorators import role_required
 from .models import Lead,Deal,Task,Client
 from inventory.models import Product
 from .forms import LeadModelForm,NoteModelForm,DealModelForm,TaskModelForm,InvoiceModelForm
@@ -17,26 +19,33 @@ def is_staff_member(user):
     return user.is_staff # Ou verifier un groupe "Commerçants"
 
 @login_required
-@user_passes_test(is_staff_member, login_url='mplace:home')
+@role_required(allowed_roles=['commercial']) # 'admin' est inclus par le décorateur
 def dashboard(request):
+    user_boutique = request.user.profile.boutique
     # Statistiques Financières (Invoices)
+    # total_encaisse = Invoice.objects.filter(status='payee').aggregate(Sum('amount'))['amount__sum'] or 0
+    # total_en_attente = Invoice.objects.filter(status='en_attente').aggregate(Sum('amount'))['amount__sum'] or 0
     total_encaisse = Invoice.objects.filter(status='payee').aggregate(Sum('amount'))['amount__sum'] or 0
-    total_en_attente = Invoice.objects.filter(status='en_attente').aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # On calcule la somme de tous les montants des deals
-    total_pipeline = Deal.objects.filter(stage__in=['qualification', 'proposition', 'negociation']).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_en_attente = Invoice.objects.filter(status='en_attente').aggregate(Sum('amount'))['amount__sum'] or 0  # On calcule la somme de tous les montants des deals
+    # total_pipeline = Deal.objects.filter(stage__in=['qualification', 'proposition', 'negociation']).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_pipeline = Deal.objects.filter(
+        lead__boutique=user_boutique, 
+        stage__in=['qualification', 'proposition', 'negociation']
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
     # On récupère les 5 derniers prospects pour le dashboard
     stats_status = Lead.objects.values('status').annotate(total=Count('status'))
     labels = [dict(Lead.STATUS_CHOICES).get(s['status']) for s in stats_status]
     data = [s['total'] for s in stats_status]
     # On peut maintenant utiliser 'labels' et 'data' pour créer un graphique
     query = request.GET.get('q', '') #recuperer ce ki taper dans barre de recherche
-    leads = Lead.objects.all().order_by('-date_added')#ajouter un slic[:5] pr ne afficher que 5 et dans ce cas la recherche vapa fonctionner
+    # leads = Lead.objects.all().order_by('-date_added')#ajouter un slic[:5] pr ne afficher que 5 et dans ce cas la recherche vapa fonctionner
+    leads = Lead.objects.filter(boutique=user_boutique).order_by('-date_added')
     if query:
         leads = leads.filter(
-            Q(first_name__icontains=query) | 
-            Q(last_name__icontains=query) | 
-            Q(email__icontains=query)
+            # Q(first_name__icontains=query) | 
+            # Q(last_name__icontains=query) | 
+            # Q(email__icontains=query)
+            Q(first_name__icontains=query) | Q(last_name__icontains=query)
         )
     total_leads = Lead.objects.count()
 
@@ -54,11 +63,14 @@ def dashboard(request):
     low_stock_count = len(low_stock_products)
     
     context = {
-        'leads': leads,
-        'total_leads':Lead.objects.count(),
+        # 'leads': leads,
+        'leads': leads[:5] if not request.htmx else leads,
+        # 'total_leads':Lead.objects.count(),
+        'total_leads': leads.count(),
         'labels': labels,
         'data': data,
-        'urgent_tasks': urgent_tasks,
+        # 'urgent_tasks': urgent_tasks,
+        'urgent_tasks': Task.objects.filter(lead__boutique=user_boutique, is_completed=False)[:5],
         'total_pipeline': total_pipeline,
         'total_encaisse': total_encaisse,
         'total_en_attente': total_en_attente,
@@ -69,23 +81,37 @@ def dashboard(request):
     if request.htmx:
         return render(request, 'leads/partials/lead_list.html', context)
     return render(request, 'leads/dashboard.html', context)
-##
+# ##
+# @login_required
+# def lead_create(request):
+#     if request.method == "POST":
+#         form = LeadModelForm(request.POST)
+#         if form.is_valid():
+#             form.save()
+#             return redirect("leads:home") # Vérifie que le nom 'dashboard' existe dans tes URLs
+#     else:
+#         form = LeadModelForm()
+    
+#     print(f"DEBUG: Nombre de champs dans le formulaire : {len(form.fields)}")
+    
+#     context = {
+#         "form": form
+#     }
+#     return render(request, "leads/lead_create.html", context)
 @login_required
+@role_required(allowed_roles=['commercial'])
 def lead_create(request):
     if request.method == "POST":
         form = LeadModelForm(request.POST)
         if form.is_valid():
-            form.save()
-            return redirect("leads:home") # Vérifie que le nom 'dashboard' existe dans tes URLs
+            lead = form.save(commit=False)
+            # ON FORCE LA BOUTIQUE DU VENDEUR
+            lead.boutique = request.user.profile.boutique 
+            lead.save()
+            return redirect("leads:home")
     else:
         form = LeadModelForm()
-    
-    print(f"DEBUG: Nombre de champs dans le formulaire : {len(form.fields)}")
-    
-    context = {
-        "form": form
-    }
-    return render(request, "leads/lead_create.html", context)
+    return render(request, "leads/lead_create.html", {"form": form})
 ##
 @login_required
 def lead_update(request, pk):
@@ -178,8 +204,11 @@ def deal_create(request, lead_pk):
     return render(request, "leads/deal_create.html", context)
 ###
 @login_required
+@role_required(allowed_roles=['commercial'])
 def pipeline_view(request):
-    deals = Deal.objects.all()
+    user_boutique = request.user.profile.boutique
+    # On ne prend que les deals des leads de NOTRE boutique
+    deals = Deal.objects.filter(lead__boutique=user_boutique)
     # On organise les deals par étape pour le template
     stages = [
         ('qualification', 'Qualification'),

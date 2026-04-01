@@ -9,13 +9,13 @@
             </span>
             {% endif %}
 
-            <img src="{% if produit.image %}{{ produit.image.url }}{% else %}https://via.placeholder.com/300/eef4ff/00235B?text={{ produit.nom|truncatechars:10 }}{% endif %}" 
+            <img src="{% if produit.image %}{{ produit.image.url }}{% else %}https://via.placeholder.com/300/eef4ff/00235B?text={{ produit.name|truncatechars:10 }}{% endif %}" 
                  class="card-img-top p-2 rounded-4" 
                  style="height: 150px; object-fit: cover;" 
-                 alt="{{ produit.nom }}">
+                 alt="{{ produit.name }}">
 
             <div class="card-body p-2 d-flex flex-column">
-                <h6 class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.85rem;">{{ produit.nom }}</h6>
+                <h6 class="fw-bold text-dark text-truncate mb-1" style="font-size: 0.85rem;">{{ produit.name }}</h6>
                 
                 <div class="mt-auto d-flex justify-content-between align-items-center">
                     <span class="text-primary fw-bold" style="font-size: 0.9rem;">

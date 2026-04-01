@@ -21,6 +21,7 @@ class Lead(models.Model):
         ('appel', 'Appel direct'),
         ('site_web', 'Site Web'),
     )
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name='leads')
 
     first_name = models.CharField(max_length=100, verbose_name="Prénom")
     last_name = models.CharField(max_length=100, verbose_name="Nom")
@@ -101,6 +102,8 @@ class Task(models.Model):
     
 #####
 class Client(models.Model):
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name='clients_crm')
+
     lead = models.OneToOneField(Lead, on_delete=models.SET_NULL, null=True, blank=True)
     first_name = models.CharField(max_length=100,verbose_name="Prénom")
     last_name = models.CharField(max_length=100,verbose_name="Nom")
@@ -120,7 +123,7 @@ class Invoice(models.Model):
         ('payee', 'Payée'),
         ('annulee', 'Annulée'),
     )
-
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name='factures_crm')
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name="invoices")
     invoice_number = models.CharField(max_length=50, unique=True, editable=False)
     amount = models.DecimalField(max_digits=12, decimal_places=0)

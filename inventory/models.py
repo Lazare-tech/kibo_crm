@@ -1,10 +1,12 @@
 import uuid
 from django.db import models
 from django.conf import settings
+from mplace.models import Categorie 
 from django.db import transaction
 # Create your models here.
 
 class Category(models.Model):
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name="inventory_categories")
     name = models.CharField(max_length=100, verbose_name="Nom de la catégorie")
     description = models.TextField(blank=True, null=True,verbose_name="Description")
 
@@ -24,12 +26,13 @@ class Product(models.Model):
         ('litre', 'Litre'),
         ('paquet', 'Paquet'),
     )
-
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="products")
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name="inventory_products")
+    category = models.ForeignKey('mplace.Categorie', on_delete=models.CASCADE, related_name="products")
     name = models.CharField(max_length=200, verbose_name="Désignation")
-    sku = models.CharField(max_length=50, unique=True, verbose_name="Code Article / SKU")
+    sku = models.CharField(max_length=50, verbose_name="Code Article / SKU")
     description = models.TextField(blank=True, null=True,verbose_name="Description")
-    
+    image = models.ImageField(upload_to='market/produits/')
+    is_published = models.BooleanField(default=False, verbose_name="Publier sur la Marketplace")
     # Quantités
     quantity = models.IntegerField(default=0, verbose_name="Stock Actuel")
     min_stock_level = models.IntegerField(default=5, verbose_name="Seuil d'alerte")
@@ -41,18 +44,36 @@ class Product(models.Model):
     unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default='unite')
     date_added = models.DateTimeField(auto_now_add=True,verbose_name="Date d'ajout")
 
+    #
+    class Meta:
+        # 2. AJOUTER cette contrainte d'unicité combinée
+        unique_together = ('boutique', 'sku')
+        verbose_name = "Produit"
+        verbose_name_plural = "Produits"
+        
+    import uuid
+
+    def save(self, *args, **kwargs):
+        if not self.sku:
+            # Génère un SKU basé sur le nom de la boutique et un code court
+            prefix = self.boutique.nom[:3].upper() # Ex: JAG pour JagoPoint
+            code = uuid.uuid4().hex[:5].upper()
+            self.sku = f"{prefix}-{code}"
+        super().save(*args, **kwargs)
+        
     def __str__(self):
-        return f"{self.name} ({self.sku})"
+        return f"[{self.sku}] {self.name} ({self.boutique.nom})"
 
     @property
     def is_low_stock(self):
         return self.quantity <= self.min_stock_level
 
-class StockMovement(models.Model):
+class StockMovement(models.Model):  
     MOVEMENT_TYPES = (
         ('entree', 'Entrée (Achat/Retour)'),
         ('sortie', 'Sortie (Vente/Perte)'),
     )
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name="stock_movements")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -73,6 +94,7 @@ class StockMovement(models.Model):
 ###################################################################################################################
 
 class Supplier(models.Model):
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name="suppliers")
     name = models.CharField(max_length=200, verbose_name="Nom du fournisseur")
     contact_name = models.CharField(max_length=100, blank=True, verbose_name="Nom du contact")
     phone = models.CharField(max_length=20, verbose_name="Téléphone")
@@ -89,7 +111,7 @@ class SupplierOrder(models.Model):
         ('recu', 'Reçu (Terminé)'),
         ('annule', 'Annulé'),
     )
-
+    boutique = models.ForeignKey('mplace.Boutique', on_delete=models.CASCADE, related_name="supplier_orders")
     order_number = models.CharField(max_length=50, unique=True, verbose_name="N° Commande")
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="orders")
     date_order = models.DateTimeField(auto_now_add=True,verbose_name="Date de commande")

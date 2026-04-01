@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'inventory',
     'sales',
     'mplace',
+    'accounts',
     'django.contrib.humanize',
 ]
 
@@ -71,7 +72,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                    'mplace.context_processors.categories_processor',
+                'mplace.context_processors.categories_processor',
 
             ],
         },

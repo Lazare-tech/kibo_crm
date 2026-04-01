@@ -38,17 +38,44 @@
                         <a class="nav-link dropdown-toggle btn btn-light rounded-pill px-3 border shadow-sm" href="#" id="userMenu" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1 text-primary"></i> {{ user.username }}
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 mt-2 p-2" style="min-width: 200px;">
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 mt-2 p-2" style="min-width: 240px;">
                             <li class="px-3 py-2">
                                 <small class="text-muted d-block">Connecté en tant que</small>
                                 <span class="fw-bold">{{ user.email|default:user.username }}</span>
+                                {% if user.profile %}
+                                    <span class="badge bg-primary-subtle text-primary d-inline-block mt-1" style="font-size: 0.7rem;">
+                                        {{ user.profile.get_role_display }}
+                                    </span>
+                                {% endif %}
                             </li>
+                            
                             <li><hr class="dropdown-divider"></li>
                             
-                            {% if user.is_staff or user.is_superuser %}
+                            {# --- ACCÈS ERP POUR COMMERÇANTS ET EMPLOYÉS --- #}
+                            {% if user.profile %}
+                                {% if user.profile.boutique.is_active %}
+                                    <li>
+                                        <a class="dropdown-item rounded-3 py-2 fw-bold text-primary" href="{% url 'leads:dashboard' %}">
+                                            <i class="fas fa-chart-line me-2"></i>Mon Dashboard ERP
+                                        </a>
+                                    </li>
+                                    <li class="px-3 mb-2">
+                                        <small class="text-muted" style="font-size: 0.7rem;">Boutique : {{ user.profile.boutique.nom }}</small>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <div class="dropdown-item rounded-3 py-2 text-warning small italic">
+                                            <i class="fas fa-clock me-2"></i>En attente de validation...
+                                        </div>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+
+                            {# --- ACCÈS ADMIN JAGO (POUR TOI) --- #}
+                            {% if user.is_staff %}
                             <li>
-                                <a class="dropdown-item rounded-3 py-2 fw-bold text-primary" href="{% url 'leads:dashboard' %}">
-                                    <i class="fas fa-chart-line me-2"></i>Mon Dashboard ERP
+                                <a class="dropdown-item rounded-3 py-2 text-dark" href="{% url 'admin:index' %}">
+                                    <i class="fas fa-user-shield me-2"></i>Administration Centrale
                                 </a>
                             </li>
                             {% endif %}
@@ -65,6 +92,7 @@
                         </ul>
                     </li>
                 {% else %}
+                    {# TES BOUTONS DE CONNEXION RESTENT ICI #}
                     <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
                         <a class="btn btn-outline-primary rounded-pill px-4 border-2 fw-bold" href="{% url 'mplace:login' %}">Connexion</a>
                     </li>
